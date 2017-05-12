@@ -6,7 +6,6 @@ import it.gioaudino.game.Service.GameManager;
 import it.gioaudino.game.Service.GsonService;
 import it.gioaudino.game.Service.PeerManager;
 
-import javax.swing.text.html.parser.Entity;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -16,10 +15,9 @@ import javax.ws.rs.core.Response;
  */
 
 @Path("/games")
-public class GameServer{
+public class GameServer {
 
     protected GameManager gameManager = GameManager.getInstance();
-
     
     @GET
     @Path("/all")
@@ -28,19 +26,19 @@ public class GameServer{
         return Response.ok(GsonService.getExclusionInstance().toJson(gameManager.getGames().values())).build();
     }
 
-    
+
     @GET
     @Path("/{gameName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSingleGameInfo(@PathParam("gameName") String gameName) {
         Game game = gameManager.getGame(gameName);
         if (null == game) {
-            return buildResponse("it.gioaudino.game.Entity.Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
         }
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
 
-    
+
     @POST
     @Path("/create")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -64,7 +62,7 @@ public class GameServer{
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
 
-    
+
     @PUT
     @Path("/{gameName}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -72,7 +70,7 @@ public class GameServer{
     public Response putUserToGame(@PathParam("gameName") String gameName, String json) {
         Game game = this.gameManager.getGame(gameName);
         if (null == game) {
-            return buildResponse("it.gioaudino.game.Entity.Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
         }
         Peer peer = PeerManager.deserialize(json);
         if (game.getPeers().containsKey(peer.getUsername())) {
@@ -82,28 +80,28 @@ public class GameServer{
         return Response.ok(game).build();
     }
 
-    
+
     @DELETE
     @Path("/{gameName}/{username}")
     public Response deleteUserFromGame(@PathParam("gameName") String gameName, @PathParam("username") String username) {
         if (!gameManager.hasGame(gameName))
-            return buildResponse("it.gioaudino.game.Entity.Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
         Game game = gameManager.getGame(gameName);
         if (!game.getPeers().containsKey(username))
             return buildResponse("Player " + username + " does not exist in game " + gameName, Response.Status.BAD_REQUEST);
         Peer peer = game.removePeer(username);
-        if(null == peer)
+        if (null == peer)
             return buildResponse("Something happened while deleting player", Response.Status.INTERNAL_SERVER_ERROR);
 
         return Response.ok().build();
     }
 
-    
+
     @DELETE
     @Path("/game/{gameName}")
     public Response deleteSingleGame(@PathParam("gameName") String gameName) {
         if (!gameManager.hasGame(gameName))
-            return buildResponse("it.gioaudino.game.Entity.Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
         gameManager.removeGame(gameName);
         return Response.ok("Games deleted").build();
     }

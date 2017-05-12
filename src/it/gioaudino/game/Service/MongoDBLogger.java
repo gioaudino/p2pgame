@@ -28,7 +28,7 @@ public class MongoDBLogger {
         Document responseValues = new Document();
         Document requestValues = new Document();
 
-        requestValues.put("method", controller.split("(?=\\p{Upper})")[0]);
+        requestValues.put("method", controller.split("(?=\\p{Upper})")[0].toUpperCase());
         requestValues.put("controller", controller);
         requestValues.put("body", requestPayload);
 
@@ -41,7 +41,7 @@ public class MongoDBLogger {
         document
                 .append("request", requestValues)
                 .append("response", responseValues)
-                .append("timestamp", new Date());
+                .append("timestamp", new Date(System.currentTimeMillis()));
         mongoCollection.insertOne(document);
 
     }
