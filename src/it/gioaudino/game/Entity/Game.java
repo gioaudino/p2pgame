@@ -1,4 +1,4 @@
-package Entity;
+package it.gioaudino.game.Entity;
 
 import com.google.gson.annotations.Expose;
 
@@ -31,7 +31,7 @@ public class Game {
         this.peers.put(creator.getUsername(), creator);
     }
 
-    public Game addPeer(Peer peer){
+    public synchronized Game addPeer(Peer peer){
         this.peers.put(peer.getUsername(), peer);
         return this;
     }

@@ -1,5 +1,7 @@
-import Entity.Game;
-import Entity.Peer;
+package it.gioaudino.game.Service;
+
+import it.gioaudino.game.Entity.Game;
+import it.gioaudino.game.Entity.Peer;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,17 +22,7 @@ public class GameManager {
         this.reset();
     }
 
-    public Game createGame(String name, int size, int points, Peer creator) {
-        if (size % 2 != 0) throw new IllegalArgumentException("Size has to be an even number");
-        if (this.games.containsKey(name))
-            throw new IllegalArgumentException("A game with name '" + name + "' already exists");
-
-        Game game = new Game(name, size, points, creator);
-        games.put(name, game);
-        return game;
-    }
-
-    public Game createGame(String json){
+    public synchronized Game createGame(String json){
         Game game = GsonService.getSimpleInstance().fromJson(json, Game.class);
         game.setCreatedTimestamp();
         if (game.getSize() % 2 != 0) throw new IllegalArgumentException("Size has to be an even number");
@@ -44,13 +36,6 @@ public class GameManager {
 
     }
 
-    public void addGame(Game game){
-        if (game.getSize() % 2 != 0) throw new IllegalArgumentException("Size has to be an even number");
-        if (this.games.containsKey(game.getName()))
-            throw new IllegalArgumentException("A game with name '" + game.getName() + "' already exists");
-
-        games.put(game.getName(), game);
-    }
 
     public void removeGame(String name) {
         this.games.remove(name);

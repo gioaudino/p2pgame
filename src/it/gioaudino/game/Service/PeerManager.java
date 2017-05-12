@@ -1,4 +1,6 @@
-import Entity.Peer;
+package it.gioaudino.game.Service;
+
+import it.gioaudino.game.Entity.Peer;
 
 /**
  * Created by gioaudino on 10/05/17.

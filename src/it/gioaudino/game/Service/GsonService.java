@@ -1,3 +1,5 @@
+package it.gioaudino.game.Service;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -11,7 +13,6 @@ public class GsonService {
     public static Gson getExclusionInstance() {
         if (gsonExclusionInstance == null) {
             gsonExclusionInstance = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setPrettyPrinting().create();
-
         }
         return gsonExclusionInstance;
     }
@@ -19,7 +20,6 @@ public class GsonService {
     public static Gson getSimpleInstance() {
         if (gsonSimpleInstance == null) {
             gsonSimpleInstance = new Gson();
-
         }
         return gsonSimpleInstance;
     }

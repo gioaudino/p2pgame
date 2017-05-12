@@ -1,6 +1,4 @@
-package Entity;
-
-import com.google.gson.annotations.Expose;
+package it.gioaudino.game.Entity;
 
 /**
  * Created by gioaudino on 10/05/17.

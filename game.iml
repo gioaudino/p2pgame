@@ -22,5 +22,6 @@
     <orderEntry type="library" scope="PROVIDED" name="GlassFish 4.1.2 - RESTful Web Service" level="application_server_libraries" />
     <orderEntry type="library" scope="PROVIDED" name="GlassFish 4.1.2" level="application_server_libraries" />
     <orderEntry type="library" name="gson-2.8.0-javadoc" level="project" />
+    <orderEntry type="library" name="org.mongodb:mongodb-driver:3.4.2" level="project" />
   </component>
 </module>
