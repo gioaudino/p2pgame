@@ -1,16 +1,12 @@
 package it.gioaudino.game.Service;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.util.JSON;
 import org.bson.Document;
 
 import javax.ws.rs.core.Response;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -19,9 +15,12 @@ import java.util.Map;
 public class MongoDBLogger {
     private static final String DATABASE = "sdp";
     private static final String COLLECTION = "gameLog";
+    private static final String TEMP_COLLECTION = "temp";
     private static final MongoClient mongoClient = new MongoClient();
     private static final MongoDatabase mongoDatabase = mongoClient.getDatabase(DATABASE);
     private static final MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(COLLECTION);
+
+    private static final MongoCollection<Document> tempMongoCollection = mongoDatabase.getCollection(TEMP_COLLECTION);
 
     public static void log(String controller, Map<String, Object> requestPayload, Response response) {
         Document document = new Document();
@@ -34,7 +33,11 @@ public class MongoDBLogger {
 
 
         responseValues.put("status", String.valueOf(response.getStatus()));
-        Document doc = Document.parse(response.getEntity().toString());
+        Document doc = null;
+        try {
+            doc = Document.parse(response.getEntity().toString());
+        } catch (Exception e) {
+        }
         responseValues.put("payload", doc);
 
 
@@ -44,6 +47,16 @@ public class MongoDBLogger {
                 .append("timestamp", new Date(System.currentTimeMillis()));
         mongoCollection.insertOne(document);
 
+    }
+
+    public static void logTemp(String toLog) {
+        Document document = new Document();
+        document.put("str", toLog);
+        tempMongoCollection.insertOne(document);
+    }
+
+    public static void logTemp(Object obj){
+        logTemp(GsonService.getSimpleInstance().toJson(obj));
     }
 
 }

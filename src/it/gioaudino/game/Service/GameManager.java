@@ -30,7 +30,6 @@ public class GameManager {
             throw new IllegalArgumentException("A game with name '" + game.getName() + "' already exists");
         if(game.getPeers().size() < 1)
             throw new IllegalArgumentException("Cannot create a game without players");
-
         this.games.put(game.getName(), game);
         return game;
 

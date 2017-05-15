@@ -18,7 +18,7 @@ import javax.ws.rs.core.Response;
 public class GameServer {
 
     protected GameManager gameManager = GameManager.getInstance();
-    
+
     @GET
     @Path("/all")
     @Produces(MediaType.APPLICATION_JSON)
@@ -52,11 +52,10 @@ public class GameServer {
         } catch (IllegalArgumentException e) {
             return buildResponse(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (Exception e) {
-            return buildResponse("", Response.Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            if (null == game) {
-                return buildResponse("", Response.Status.INTERNAL_SERVER_ERROR);
-            }
+            return buildResponse(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        if (null == game) {
+            return buildResponse("Something somewhere went terribly wrong", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
