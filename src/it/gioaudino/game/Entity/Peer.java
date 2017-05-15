@@ -6,13 +6,14 @@ package it.gioaudino.game.Entity;
 public class Peer {
     private String username;
     private String address;
-    private String port;
+    private int port;
     private String fullAddress;
 
-    public Peer(String address, String port) {
-        this.address = address;
+    public Peer(String username, String address, int port) {
+        this.username = username;
+        this.address = address.matches("0.0.0.0") ? "localhost" : address;
         this.port = port;
-        this.fullAddress = address + ":" + port;
+        this.fullAddress = this.address + ":" + port;
     }
 
     public String getUsername() {
@@ -27,7 +28,7 @@ public class Peer {
         return address;
     }
 
-    public String getPort() {
+    public int getPort() {
         return port;
     }
 
@@ -36,14 +37,10 @@ public class Peer {
     }
 
     public void setAddress(String address) {
-        this.address = address;
+        this.address = address.matches("0.0.0.0") ? "localhost" : address;
     }
 
-    public void setPort(String port) {
+    public void setPort(int port) {
         this.port = port;
-    }
-
-    public void setFullAddress(String fullAddress) {
-        this.fullAddress = fullAddress;
     }
 }

@@ -58,14 +58,14 @@ public class LoggedGameServer extends GameServer {
         return response;
     }
 
-    @Override
-    public Response deleteSingleGame(String gameName) {
-        Response response = super.deleteSingleGame(gameName);
-        Map<String, Object> requestPayload = new HashMap<>();
-        requestPayload.put("gameName", gameName);
-        callLogger(requestPayload, response);
-        return response;
-    }
+//    @Override
+//    public Response deleteSingleGame(String gameName) {
+//        Response response = super.deleteSingleGame(gameName);
+//        Map<String, Object> requestPayload = new HashMap<>();
+//        requestPayload.put("gameName", gameName);
+//        callLogger(requestPayload, response);
+//        return response;
+//    }
 
     protected void callLogger(Map<String, Object> requestPayload, Response response) {
         MongoDBLogger.log(Thread.currentThread().getStackTrace()[2].getMethodName(), requestPayload, response);

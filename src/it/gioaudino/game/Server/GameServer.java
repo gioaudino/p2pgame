@@ -69,7 +69,7 @@ public class GameServer {
     public Response putUserToGame(@PathParam("gameName") String gameName, String json) {
         Game game = this.gameManager.getGame(gameName);
         if (null == game) {
-            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         }
         Peer peer = PeerManager.deserialize(json);
         if (game.getPeers().containsKey(peer.getUsername())) {
@@ -84,10 +84,10 @@ public class GameServer {
     @Path("/{gameName}/{username}")
     public Response deleteUserFromGame(@PathParam("gameName") String gameName, @PathParam("username") String username) {
         if (!gameManager.hasGame(gameName))
-            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         Game game = gameManager.getGame(gameName);
         if (!game.getPeers().containsKey(username))
-            return buildResponse("Player " + username + " does not exist in game " + gameName, Response.Status.BAD_REQUEST);
+            return buildResponse("Player " + username + " does not exist in game " + gameName, Response.Status.NOT_FOUND);
         Peer peer = game.removePeer(username);
         if (null == peer)
             return buildResponse("Something happened while deleting player", Response.Status.INTERNAL_SERVER_ERROR);
@@ -96,14 +96,14 @@ public class GameServer {
     }
 
 
-    @DELETE
-    @Path("/game/{gameName}")
-    public Response deleteSingleGame(@PathParam("gameName") String gameName) {
-        if (!gameManager.hasGame(gameName))
-            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
-        gameManager.removeGame(gameName);
-        return Response.ok("Games deleted").build();
-    }
+//    @DELETE
+//    @Path("/game/{gameName}")
+//    public Response deleteSingleGame(@PathParam("gameName") String gameName) {
+//        if (!gameManager.hasGame(gameName))
+//            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+//        gameManager.removeGame(gameName);
+//        return Response.ok("Games deleted").build();
+//    }
 
     protected Response buildResponse(String message, Response.Status statusCode) {
         return Response.status(statusCode).entity(GsonService.getSimpleInstance().toJson(message)).build();

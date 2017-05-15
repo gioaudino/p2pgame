@@ -50,34 +50,34 @@ public class Position {
     }
 
     private String getZone() {
-        if(x < gridSize/2){
-            if(y<gridSize/2) return ZONE_GREEN;
+        if (x < gridSize / 2) {
+            if (y < gridSize / 2) return ZONE_GREEN;
             return ZONE_BLUE;
         }
 
-        if(y<gridSize/2) return ZONE_RED;
+        if (y < gridSize / 2) return ZONE_RED;
         return ZONE_YELLOW;
     }
 
     public Position move(Directions direction) throws IllegalMoveException {
         switch (direction) {
             case LEFT:
-                if(!this.checkNewPosition(x-1, y))
+                if (!this.checkNewPosition(x - 1, y))
                     throw new IllegalMoveException();
                 this.x--;
                 break;
             case UP:
-                if(!this.checkNewPosition(x, y-1))
+                if (!this.checkNewPosition(x, y - 1))
                     throw new IllegalMoveException();
                 this.y--;
                 break;
             case RIGHT:
-                if(!this.checkNewPosition(x+1, y))
+                if (!this.checkNewPosition(x + 1, y))
                     throw new IllegalMoveException();
                 this.x++;
                 break;
             case DOWN:
-                if(!this.checkNewPosition(x, y+1))
+                if (!this.checkNewPosition(x, y + 1))
                     throw new IllegalMoveException();
                 this.y++;
                 break;
