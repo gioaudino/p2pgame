@@ -3,21 +3,19 @@ package it.gioaudino.game.Service;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import it.gioaudino.game.Entity.Game;
 import it.gioaudino.game.Entity.Peer;
 import it.gioaudino.game.Exception.BadRequestException;
+import it.gioaudino.game.Exception.HTTPException;
+import it.gioaudino.game.Exception.InternalServerErrorException;
+import it.gioaudino.game.Exception.UnknownHTTPException;
 import it.gioaudino.game.Server.Routes;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,56 +24,85 @@ import java.util.List;
  */
 public class ClientRESTCommunicationService {
 
-    private Peer peer;
+    private static final String INSTANCE_SERVER_ADDRESS;
 
-    public ClientRESTCommunicationService(Peer peer) {
-        this.peer = peer;
+    static {
+        INSTANCE_SERVER_ADDRESS = Routes.SERVER_ADDRESS;
+        Unirest.setDefaultHeader("accept", MediaType.APPLICATION_JSON);
+        Unirest.setDefaultHeader("Content-Type", MediaType.APPLICATION_JSON);
     }
 
-    public void getGames() throws Exception {
-        String url = Routes.SERVER_ADDRESS + Routes.GAMES_GET;
-        HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-        System.out.println(jsonResponse.getStatus());
-        Type listType = new TypeToken<ArrayList<Game>>() {
+    public static List<Game> getExistingGames() throws UnirestException, HTTPException {
+
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAMES_GET;
+
+        HttpResponse<String> jsonResponse = Unirest.get(url).asString();
+
+        throwExceptionIfNotOk(jsonResponse);
+
+        Type gameListType = new TypeToken<ArrayList<Game>>() {
         }.getType();
+        List<Game> gamesList = GsonService.getSimpleInstance().fromJson(jsonResponse.getBody().toString(), gameListType);
 
-        List<Game> yourClassList = new Gson().fromJson(jsonResponse.getBody().toString(), listType);
-        for (Game g : yourClassList)
-            System.out.println(g.getName());
+        return gamesList;
     }
 
-    public ArrayList<Game> getExistingGames() throws BadRequestException {
-        String url = Routes.SERVER_ADDRESS + Routes.GAMES_GET;
-        try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-            int responseCode = connection.getResponseCode();
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream()));
-            String inputLine;
-            StringBuffer response = new StringBuffer();
+    public static Game createNewGame(Game game) throws UnirestException, HTTPException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_POST;
+        Gson gson = GsonService.getSimpleInstance();
+        HttpResponse<String> jsonResponse = Unirest.post(url)
+                .body(gson.toJson(game)).asString();
 
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
+        throwExceptionIfNotOk(jsonResponse);
 
-            if (responseCode != Response.Status.OK.getStatusCode()) {
-                throw new BadRequestException(response.toString());
-            }
-            System.out.println("RESPONSE  " + responseCode);
+        Game responseGame = gson.fromJson(jsonResponse.getBody().toString(), Game.class);
 
-            Type listType = new TypeToken<ArrayList<Game>>() {
-            }.getType();
-
-            List<Game> yourClassList = new Gson().fromJson(response.toString(), listType);
-            for (Game g : yourClassList)
-                System.out.println(GsonService.getSimpleInstance().toJson(g));
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return responseGame;
     }
+
+    public static Game fetchGame(String gameName) throws UnirestException, HTTPException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_GET + gameName;
+
+        HttpResponse<String> jsonResponse = Unirest.get(url).asString();
+
+        throwExceptionIfNotOk(jsonResponse);
+
+        Game game = GsonService.getSimpleInstance().fromJson(jsonResponse.getBody(), Game.class);
+
+        return game;
+    }
+
+    public static Game joinExistingGame(String gameName, Peer peer) throws UnirestException, HTTPException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_PUT + gameName;
+
+        HttpResponse<String> jsonResponse = Unirest.put(url).body(GsonService.getSimpleInstance().toJson(peer)).asString();
+
+        throwExceptionIfNotOk(jsonResponse);
+
+        Game game = GsonService.getSimpleInstance().fromJson(jsonResponse.getBody(), Game.class);
+
+        return game;
+    }
+
+    public static boolean tryGameName(String gameName) throws UnirestException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_HEAD + gameName;
+        HttpResponse<String> jsonResponse = Unirest.head(url).asString();
+
+        return Response.Status.OK.getStatusCode() == jsonResponse.getStatus();
+    }
+
+
+    private static void throwExceptionIfNotOk(HttpResponse<String> response) throws HTTPException {
+
+        if (response.getStatus() == 400)
+            throw new BadRequestException(response.getBody().toString());
+
+        if (response.getStatus() == 500)
+            throw new InternalServerErrorException(response.getBody().toString());
+
+        if (response.getStatus() != 200)
+            throw new UnknownHTTPException(response.getBody().toString());
+
+    }
+
 }

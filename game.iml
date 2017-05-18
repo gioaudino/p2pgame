@@ -24,5 +24,6 @@
     <orderEntry type="library" name="gson-2.8.0-javadoc" level="project" />
     <orderEntry type="library" name="org.mongodb:mongodb-driver:3.4.2" level="project" />
     <orderEntry type="library" name="com.mashape.unirest:unirest-java:1.4.9" level="project" />
+    <orderEntry type="library" name="org.glassfish.jersey.core:jersey-common:2.22" level="project" />
   </component>
 </module>

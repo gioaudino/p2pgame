@@ -4,7 +4,6 @@ import it.gioaudino.game.Entity.Game;
 import it.gioaudino.game.Entity.Peer;
 import it.gioaudino.game.Service.GameManager;
 import it.gioaudino.game.Service.GsonService;
-import it.gioaudino.game.Service.PeerManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -38,6 +37,11 @@ public class GameServer {
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
 
+    @HEAD
+    @Path("/{gameName}")
+    public Response headSingleGame(@PathParam("gameName") String gameName) {
+        return buildResponse(null, gameManager.hasGame(gameName) ? Response.Status.OK : Response.Status.NOT_FOUND);
+    }
 
     @POST
     @Path("/create")
@@ -45,7 +49,7 @@ public class GameServer {
     @Produces(MediaType.APPLICATION_JSON)
     public Response postNewGame(String json) {
 
-        Game game = null;
+        Game game;
 
         try {
             game = this.gameManager.createGame(json);
@@ -71,12 +75,12 @@ public class GameServer {
         if (null == game) {
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         }
-        Peer peer = PeerManager.deserialize(json);
+        Peer peer = GsonService.getSimpleInstance().fromJson(json, Peer.class);
         if (game.getPeers().containsKey(peer.getUsername())) {
             return buildResponse("Player " + peer.getUsername() + " already exists in game " + gameName, Response.Status.BAD_REQUEST);
         }
         game.addPeer(peer);
-        return Response.ok(game).build();
+        return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
 
 
@@ -96,16 +100,18 @@ public class GameServer {
     }
 
 
-//    @DELETE
-//    @Path("/game/{gameName}")
-//    public Response deleteSingleGame(@PathParam("gameName") String gameName) {
-//        if (!gameManager.hasGame(gameName))
-//            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
-//        gameManager.removeGame(gameName);
-//        return Response.ok("Games deleted").build();
-//    }
+    @DELETE
+    @Path("/game/{gameName}")
+    public Response deleteSingleGame(@PathParam("gameName") String gameName) {
+        if (!gameManager.hasGame(gameName))
+            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+        gameManager.removeGame(gameName);
+        return Response.ok("Games deleted").build();
+    }
 
     protected Response buildResponse(String message, Response.Status statusCode) {
-        return Response.status(statusCode).entity(GsonService.getSimpleInstance().toJson(message)).build();
+        if (null != message)
+            return Response.status(statusCode).entity(GsonService.getSimpleInstance().toJson(message)).build();
+        return Response.status(statusCode).build();
     }
 }

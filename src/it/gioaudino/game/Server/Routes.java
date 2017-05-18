@@ -5,6 +5,7 @@ package it.gioaudino.game.Server;
  */
 public class Routes {
     public static final String SERVER_ADDRESS = "http://localhost:8080/game";
+    public static final String GAME_HEAD = "/games/";
     public static final String GAMES_GET = "/games/all";
     public static final String GAME_GET = "/games/";
     public static final String GAME_POST = "/games/create";

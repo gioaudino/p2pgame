@@ -1,6 +1,7 @@
 package it.gioaudino.game.Server;
 
 import it.gioaudino.game.Service.MongoDBLogger;
+import it.gioaudino.game.Service.RunnableLogger;
 import org.bson.Document;
 
 import javax.ws.rs.core.Response;
@@ -14,7 +15,7 @@ public class LoggedGameServer extends GameServer {
     @Override
     public Response getGames() {
         Response response = super.getGames();
-        callLogger(null, response);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), null, response)).start();
         return response;
     }
 
@@ -23,7 +24,7 @@ public class LoggedGameServer extends GameServer {
         Response response = super.getSingleGameInfo(gameName);
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
-        callLogger(requestPayload, response);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
         return response;
     }
 
@@ -33,7 +34,7 @@ public class LoggedGameServer extends GameServer {
         Map<String, Object> requestPayload = new HashMap<>();
         Document doc = Document.parse(json.toString());
         requestPayload.put("payload", doc);
-        callLogger(requestPayload, response);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
         return response;
     }
 
@@ -44,7 +45,7 @@ public class LoggedGameServer extends GameServer {
         requestPayload.put("gameName", gameName);
         Document doc = Document.parse(json.toString());
         requestPayload.put("payload", doc);
-        callLogger(requestPayload, response);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
         return response;
     }
 
@@ -54,18 +55,27 @@ public class LoggedGameServer extends GameServer {
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
         requestPayload.put("username", username);
-        callLogger(requestPayload, response);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
         return response;
     }
 
-//    @Override
-//    public Response deleteSingleGame(String gameName) {
-//        Response response = super.deleteSingleGame(gameName);
-//        Map<String, Object> requestPayload = new HashMap<>();
-//        requestPayload.put("gameName", gameName);
-//        callLogger(requestPayload, response);
-//        return response;
-//    }
+    @Override
+    public Response headSingleGame(String gameName) {
+        Response response = super.headSingleGame(gameName);
+        Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("gameName", gameName);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        return response;
+    }
+
+    @Override
+    public Response deleteSingleGame(String gameName) {
+        Response response = super.deleteSingleGame(gameName);
+        Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("gameName", gameName);
+        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        return response;
+    }
 
     protected void callLogger(Map<String, Object> requestPayload, Response response) {
         MongoDBLogger.log(Thread.currentThread().getStackTrace()[2].getMethodName(), requestPayload, response);

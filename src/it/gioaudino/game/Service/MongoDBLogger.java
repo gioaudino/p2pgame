@@ -3,6 +3,7 @@ package it.gioaudino.game.Service;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.util.JSON;
 import org.bson.Document;
 
 import javax.ws.rs.core.Response;
@@ -36,7 +37,10 @@ public class MongoDBLogger {
         Document doc = null;
         try {
             doc = Document.parse(response.getEntity().toString());
+        } catch (NullPointerException e) {
         } catch (Exception e) {
+            doc = new Document();
+            doc.append("values", JSON.parse(response.getEntity().toString()));
         }
         responseValues.put("payload", doc);
 
@@ -55,7 +59,7 @@ public class MongoDBLogger {
         tempMongoCollection.insertOne(document);
     }
 
-    public static void logTemp(Object obj){
+    public static void logTemp(Object obj) {
         logTemp(GsonService.getSimpleInstance().toJson(obj));
     }
 
