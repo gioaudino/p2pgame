@@ -38,9 +38,25 @@ public class Peer {
 
     public void setAddress(String address) {
         this.address = address.matches("0.0.0.0") ? "localhost" : address;
+        updateFullAddress();
     }
 
     public void setPort(int port) {
         this.port = port;
+        updateFullAddress();
+    }
+
+    private void updateFullAddress() {
+        this.fullAddress = this.address + ":" + this.port;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Peer && username.equals(((Peer) obj).getUsername()) && fullAddress.equals(((Peer) obj).fullAddress);
+    }
+
+    @Override
+    public String toString(){
+        return this.fullAddress;
     }
 }

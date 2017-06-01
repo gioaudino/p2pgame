@@ -4,19 +4,22 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import it.gioaudino.game.Exception.HTTPException;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Scanner;
 
 /**
  * Created by gioaudino on 15/05/17.
+ * Package gioaudino.game.Client in game
  */
 public class Client {
-    public static void main(String[] args) throws IOException, HTTPException, UnirestException {
+    public static void main(String[] args) throws IOException, HTTPException, UnirestException, InterruptedException {
         ClientObject client = new ClientObject();
 
-        Scanner in = new Scanner(System.in);
-        PrintStream out = System.out;
-        while (true) UserInteractionHandler.printMenu(client, in, out);
+        Thread menu = new Thread(new RunnableMenuHandler(client));
+        Thread listener = new Thread(new ClientListener(client));
+
+
+        listener.start();
+        menu.start();
+        menu.join();
 
     }
 }

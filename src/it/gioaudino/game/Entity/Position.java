@@ -1,7 +1,5 @@
 package it.gioaudino.game.Entity;
 
-import it.gioaudino.game.Exception.IllegalMoveException;
-
 /**
  * Created by gioaudino on 12/05/17.
  */
@@ -59,38 +57,13 @@ public class Position {
         return ZONE_YELLOW;
     }
 
-    public Position move(Directions direction) throws IllegalMoveException {
-        switch (direction) {
-            case LEFT:
-                if (!this.checkNewPosition(x - 1, y))
-                    throw new IllegalMoveException();
-                this.x--;
-                break;
-            case UP:
-                if (!this.checkNewPosition(x, y - 1))
-                    throw new IllegalMoveException();
-                this.y--;
-                break;
-            case RIGHT:
-                if (!this.checkNewPosition(x + 1, y))
-                    throw new IllegalMoveException();
-                this.x++;
-                break;
-            case DOWN:
-                if (!this.checkNewPosition(x, y + 1))
-                    throw new IllegalMoveException();
-                this.y++;
-                break;
-        }
-        return this;
-    }
-
-    private boolean checkNewPosition(int x, int y) {
-        return x >= 0 && x < gridSize && y >= 0 && y < gridSize;
-    }
-
     @Override
     public String toString() {
         return "(" + x + ", " + y + ") - " + this.getZone();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Position && x == ((Position) obj).getX() && y == ((Position) obj).getY();
     }
 }

@@ -1,7 +1,6 @@
 package it.gioaudino.game.Server;
 
 import it.gioaudino.game.Service.MongoDBLogger;
-import it.gioaudino.game.Service.RunnableLogger;
 import org.bson.Document;
 
 import javax.ws.rs.core.Response;
@@ -15,7 +14,8 @@ public class LoggedGameServer extends GameServer {
     @Override
     public Response getGames() {
         Response response = super.getGames();
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), null, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, null, response);
         return response;
     }
 
@@ -24,7 +24,8 @@ public class LoggedGameServer extends GameServer {
         Response response = super.getSingleGameInfo(gameName);
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
@@ -34,7 +35,8 @@ public class LoggedGameServer extends GameServer {
         Map<String, Object> requestPayload = new HashMap<>();
         Document doc = Document.parse(json.toString());
         requestPayload.put("payload", doc);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
@@ -45,7 +47,8 @@ public class LoggedGameServer extends GameServer {
         requestPayload.put("gameName", gameName);
         Document doc = Document.parse(json.toString());
         requestPayload.put("payload", doc);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
@@ -55,7 +58,8 @@ public class LoggedGameServer extends GameServer {
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
         requestPayload.put("username", username);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
@@ -64,7 +68,8 @@ public class LoggedGameServer extends GameServer {
         Response response = super.headSingleGame(gameName);
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
@@ -73,11 +78,22 @@ public class LoggedGameServer extends GameServer {
         Response response = super.deleteSingleGame(gameName);
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("gameName", gameName);
-        new Thread(new RunnableLogger(Thread.currentThread().getStackTrace()[1].getMethodName(), requestPayload, response)).start();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, requestPayload, response);
         return response;
     }
 
-    protected void callLogger(Map<String, Object> requestPayload, Response response) {
-        MongoDBLogger.log(Thread.currentThread().getStackTrace()[2].getMethodName(), requestPayload, response);
+
+    @Override
+    public Response deleteAll() {
+        Response response = super.deleteAll();
+        String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        fireLogger(methodName, null, response);
+        return response;
     }
+
+    protected void fireLogger(String methodName, Map<String, Object> request, Response response) {
+        new Thread(() -> MongoDBLogger.log(methodName, request, response)).start();
+    }
+
 }

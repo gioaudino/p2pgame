@@ -8,6 +8,8 @@ import it.gioaudino.game.Service.GsonService;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 /**
  * Created by gioaudino on 10/05/17.
@@ -15,7 +17,7 @@ import javax.ws.rs.core.Response;
 
 @Path("/games")
 public class GameServer {
-
+    private static final String DEFAULT_ENCODING = "UTF-8";
     protected GameManager gameManager = GameManager.getInstance();
 
     @GET
@@ -30,6 +32,7 @@ public class GameServer {
     @Path("/{gameName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSingleGameInfo(@PathParam("gameName") String gameName) {
+        gameName = urlDecode(gameName);
         Game game = gameManager.getGame(gameName);
         if (null == game) {
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
@@ -40,6 +43,7 @@ public class GameServer {
     @HEAD
     @Path("/{gameName}")
     public Response headSingleGame(@PathParam("gameName") String gameName) {
+        gameName = urlDecode(gameName);
         return buildResponse(null, gameManager.hasGame(gameName) ? Response.Status.OK : Response.Status.NOT_FOUND);
     }
 
@@ -48,9 +52,7 @@ public class GameServer {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response postNewGame(String json) {
-
         Game game;
-
         try {
             game = this.gameManager.createGame(json);
         } catch (IllegalArgumentException e) {
@@ -61,7 +63,6 @@ public class GameServer {
         if (null == game) {
             return buildResponse("Something somewhere went terribly wrong", Response.Status.INTERNAL_SERVER_ERROR);
         }
-
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
 
@@ -71,22 +72,26 @@ public class GameServer {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response putUserToGame(@PathParam("gameName") String gameName, String json) {
+        gameName = urlDecode(gameName);
         Game game = this.gameManager.getGame(gameName);
         if (null == game) {
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         }
         Peer peer = GsonService.getSimpleInstance().fromJson(json, Peer.class);
-        if (game.getPeers().containsKey(peer.getUsername())) {
+        try {
+            game.addPeer(peer);
+        } catch (IllegalArgumentException e) {
             return buildResponse("Player " + peer.getUsername() + " already exists in game " + gameName, Response.Status.BAD_REQUEST);
         }
-        game.addPeer(peer);
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
-
 
     @DELETE
     @Path("/{gameName}/{username}")
     public Response deleteUserFromGame(@PathParam("gameName") String gameName, @PathParam("username") String username) {
+        gameName = urlDecode(gameName);
+        username = urlDecode(username);
+
         if (!gameManager.hasGame(gameName))
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         Game game = gameManager.getGame(gameName);
@@ -107,6 +112,20 @@ public class GameServer {
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
         gameManager.removeGame(gameName);
         return Response.ok("Games deleted").build();
+    }
+
+    @DELETE
+    @Path("/deleteAll")
+    public Response deleteAll(){
+        gameManager.reset();
+        return Response.ok().build();
+    }
+
+    private static String urlDecode(String gameName) {
+        try {
+            gameName = URLDecoder.decode(gameName, DEFAULT_ENCODING);
+        } catch (UnsupportedEncodingException e) {}
+        return gameName;
     }
 
     protected Response buildResponse(String message, Response.Status statusCode) {
