@@ -55,7 +55,7 @@ public class MessageHandler {
         removeSocketAndSetNext(client, message);
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
-\
+
     private static void removeSocketAndSetNext(ClientObject client, Message message) {
         Socket s = null;
         boolean next = false;
