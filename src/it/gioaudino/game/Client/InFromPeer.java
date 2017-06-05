@@ -1,8 +1,8 @@
 package it.gioaudino.game.Client;
 
 import it.gioaudino.game.Entity.Message;
+import it.gioaudino.game.Entity.MessageType;
 import it.gioaudino.game.Exception.CannotSetCommunicationPipeException;
-import it.gioaudino.game.Exception.DyingThreadException;
 import it.gioaudino.game.Service.GsonService;
 import it.gioaudino.game.Service.MessageHandler;
 
@@ -40,11 +40,13 @@ public class InFromPeer implements Runnable {
             try {
                 String input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
-                System.out.println("RECEIVED MESSAGE: " + message.getType());
+                if (message.getType() != MessageType.TYPE_TOKEN)
+                    System.out.println("RECEIVED MESSAGE: " + message.getType());
                 Message response = MessageHandler.handleMessage(client, message);
-                out.writeBytes(response + "\n");
-            } catch (Exception e) {
-                return;
+
+                out.writeBytes(GsonService.getSimpleInstance().toJson(response) + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

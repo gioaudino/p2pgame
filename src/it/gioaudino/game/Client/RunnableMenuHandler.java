@@ -2,14 +2,11 @@ package it.gioaudino.game.Client;
 
 import it.gioaudino.game.Exception.ExitClientException;
 
-import java.io.PrintStream;
-import java.util.Scanner;
-
 /**
  * Created by gioaudino on 19/05/17.
  * Package it.gioaudino.game.Client in game
  */
-public class RunnableMenuHandler implements Runnable{
+public class RunnableMenuHandler implements Runnable {
 
     ClientObject client;
 
@@ -20,12 +17,11 @@ public class RunnableMenuHandler implements Runnable{
     @Override
     public void run() {
         try {
-            //noinspection InfiniteLoopStatement
             while (true)
                 UserInteractionHandler.printMenu(client);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } catch (ExitClientException ignored){
+        } catch (ExitClientException ignored) {
         }
     }
 }

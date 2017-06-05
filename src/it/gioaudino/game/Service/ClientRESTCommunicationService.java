@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import it.gioaudino.game.Client.ClientObject;
 import it.gioaudino.game.Entity.Game;
 import it.gioaudino.game.Entity.Peer;
 import it.gioaudino.game.Exception.BadRequestException;
@@ -90,6 +91,11 @@ public class ClientRESTCommunicationService {
         return Response.Status.OK.getStatusCode() == jsonResponse.getStatus();
     }
 
+    public static void quitGame(ClientObject client) throws UnirestException, HTTPException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_USER_DELETE + urlEncode(client.getGame().getName()) + "/" + urlEncode(client.getUser().getUsername());
+        HttpResponse<String> jsonResponse = Unirest.delete(url).asString();
+        throwExceptionIfNotOk(jsonResponse);
+    }
 
     private static void throwExceptionIfNotOk(HttpResponse<String> response) throws HTTPException {
 
@@ -104,12 +110,13 @@ public class ClientRESTCommunicationService {
 
     }
 
-    private static String urlEncode(String value){
+    private static String urlEncode(String value) {
         try {
             return URLEncoder.encode(value, DEFAULT_ENCODING);
         } catch (UnsupportedEncodingException e) {
             return value;
         }
     }
+
 
 }

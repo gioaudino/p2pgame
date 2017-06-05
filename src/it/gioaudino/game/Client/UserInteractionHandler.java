@@ -1,14 +1,14 @@
 package it.gioaudino.game.Client;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
-import it.gioaudino.game.Entity.ClientStatus;
-import it.gioaudino.game.Entity.Game;
-import it.gioaudino.game.Entity.Peer;
+import it.gioaudino.game.Entity.*;
 import it.gioaudino.game.Exception.ExitClientException;
 import it.gioaudino.game.Exception.HTTPException;
+import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
 
 import java.text.MessageFormat;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
@@ -20,7 +20,7 @@ public class UserInteractionHandler {
 
     private static Scanner in = new Scanner(System.in);
     private static final String[] notPlayingChoices = {"1 - Change your username", "2 - Create new game", "3 - List existing games", "4 - Join existing game", "5 - Get out!"};
-    private static final String[] playingChoices = {"I. Move with WASD", "II. throw bomb with B", "III. Quit with Q"};
+    private static final String[] playingChoices = {"\u00B7 Move with WASD", "\u00B7 Throw bomb with B", "\u00B7 Quit with Q"};
     private static final Pattern inputPattern = Pattern.compile("[WASDQB]", Pattern.CASE_INSENSITIVE);
 
     public static void printMenu(ClientObject client) throws InterruptedException, ExitClientException {
@@ -34,8 +34,6 @@ public class UserInteractionHandler {
                     break;
                 case STATUS_PLAYING:
                     printPlaying(client);
-                    Thread.sleep(2000);
-                    throw new ExitClientException();
             }
         } catch (ExitClientException e) {
             in.close();
@@ -47,8 +45,10 @@ public class UserInteractionHandler {
         if (client.getUser() == null) {
             System.out.print("Hi! Welcome to the game. Please tell me your username: ");
             String username = in.nextLine();
-            client.buildPeer(username);
-            client.setStatus(ClientStatus.STATUS_NOT_PLAYING);
+            if (username.length() > 0) {
+                client.buildPeer(username);
+                client.setStatus(ClientStatus.STATUS_NOT_PLAYING);
+            }
         }
     }
 
@@ -77,11 +77,13 @@ public class UserInteractionHandler {
                     System.out.println("Thanks for playing! Goodbye!");
                     throw new ExitClientException();
                 default:
-                    System.out.println("Sorry, I don't know that.");
+                    System.err.println("Sorry, I don't know that.");
             }
-        } catch (Exception e) {
-            System.out.println("Sorry, I don't know that.");
+        } catch (InputMismatchException e) {
+            System.err.println("Sorry, I don't know that!");
+            in.nextLine();
         }
+
     }
 
     private static void changeUsername(ClientObject client) {
@@ -101,22 +103,19 @@ public class UserInteractionHandler {
             } else {
                 int side;
                 do {
-                    System.out.print("Choose field side -- should be an even number: ");
+                    System.out.print("Choose field side -- should be a positive even number: ");
                     side = in.nextInt();
                     in.nextLine();
-                } while (side % 2 != 0);
+                } while (side <= 0 || side % 2 != 0);
                 System.out.print("Choose score goal: ");
                 int goal = in.nextInt();
                 in.nextLine();
                 Game newGame = new Game(gameName, side, goal, client.getUser());
                 Game gameResponse = ClientRESTCommunicationService.createNewGame(newGame);
                 if (null != gameResponse) {
-                    client.setGame(gameResponse);
-                    client.setStatus(ClientStatus.STATUS_PLAYING);
-                    System.out.println("Well done! You created " + gameResponse.getName() + "!");
+                    client.prepareForNewGame(gameResponse);
                 }
             }
-            new Thread(new MovePerformerRunnable(client)).start();
         } catch (UnirestException e) {
             e.printStackTrace();
         } catch (HTTPException e) {
@@ -153,7 +152,7 @@ public class UserInteractionHandler {
                 Game game = ClientRESTCommunicationService.joinExistingGame(gameName, client.getUser());
                 client.setGame(game);
                 client.setStatus(ClientStatus.STATUS_PLAYING);
-                new Thread(client::prepareToJoinGame).start();
+                client.prepareToJoinGame();
 
                 System.out.println("Welcome to " + game.getName() + ". There are " + (game.getPeers().size() - 1) + " other players");
             }
@@ -164,18 +163,66 @@ public class UserInteractionHandler {
         }
     }
 
-    private static void printPlaying(ClientObject client) {
-        System.out.println("--------------------");
-        MessageFormat format = new MessageFormat("{0} playing game *{1}*: {2}/{3} points - {4} bombs --- Position: {5}");
-        Object[] args = {client.getUser().getUsername(), client.getGame().getName(), client.getScore(), client.getGame().getPoints(), "#", client.getPosition()};
-        System.out.println(format.format(args));
-        String input;
+    private static void printPlaying(ClientObject client) throws ExitClientException {
+        String input = null;
         do {
+            if (null != input && !inputPattern.matcher(input).matches()) {
+                System.err.println("Sorry, I don't know that");
+            }
             for (String i : playingChoices) System.out.println(i);
             input = in.nextLine();
         } while (!inputPattern.matcher(input).matches());
 
+        char choice = input.toUpperCase().charAt(0);
+        Move move;
+        switch (choice) {
+            case 'W':
+                try {
+                    move = new Move(client.getPosition(), Direction.UP);
+                    client.setMove(move);
+                } catch (IllegalMoveException e) {
+                    System.err.println("Illegal move. You can't go UP from " + client.getPosition());
+                }
+                break;
+            case 'A':
+                try {
+                    move = new Move(client.getPosition(), Direction.LEFT);
+                    client.setMove(move);
+                } catch (IllegalMoveException e) {
+                    System.err.println("Illegal move. You can't go LEFT from " + client.getPosition());
+                }
+                break;
+            case 'S':
+                try {
+                    move = new Move(client.getPosition(), Direction.DOWN);
+                    client.setMove(move);
+                } catch (IllegalMoveException e) {
+                    System.err.println("Illegal move. You can't go DOWN from " + client.getPosition());
+                }
+                break;
+            case 'D':
+                try {
+                    move = new Move(client.getPosition(), Direction.RIGHT);
+                    client.setMove(move);
+                } catch (IllegalMoveException e) {
+                    System.err.println("Illegal move. You can't go RIGHT from " + client.getPosition());
+                }
+                break;
+            case 'B':
+                System.out.println("In a perfect world you would have just thrown a bomb");
+                break;
+            case 'Q':
+                client.quitGame();
+                break;
+        }
 
+    }
+
+    public static synchronized void printPlayingHeader(ClientObject client) {
+        System.out.println("\n--------------------------------------------------------------------------");
+        MessageFormat format = new MessageFormat("{0} playing game *{1}*: {2}/{3} points - {4} bombs --- Position: {5}\n");
+        Object[] args = {client.getUser().getUsername(), client.getGame().getName(), client.getScore(), client.getGame().getPoints(), "#", client.getPosition()};
+        System.out.println(format.format(args));
     }
 
 

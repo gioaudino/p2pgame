@@ -24,7 +24,7 @@ public class GameManager {
     public synchronized Game createGame(String json) {
         Game game = GsonService.getSimpleInstance().fromJson(json, Game.class);
         game.setCreatedTimestamp();
-        if (game.getSize() % 2 != 0) throw new IllegalArgumentException("Size has to be an even number");
+        if (game.getSize() <= 0 || game.getSize() % 2 != 0) throw new IllegalArgumentException("Size has to be a positive even number");
         if (this.games.containsKey(game.getName()))
             throw new IllegalArgumentException("A game with name '" + game.getName() + "' already exists");
         if (game.getPeers().size() < 1)

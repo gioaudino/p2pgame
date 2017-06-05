@@ -1,6 +1,7 @@
 package it.gioaudino.game.Client;
 
 import it.gioaudino.game.Entity.Move;
+import it.gioaudino.game.Service.P2PCommunicationService;
 
 /**
  * Created by gioaudino on 01/06/17.
@@ -17,7 +18,7 @@ public class MovePerformerRunnable implements Runnable {
     @Override
     public void run() {
         synchronized (client.token) {
-            if (null == client.getNext()) {
+            if (null != client.getNext()) {
                 try {
                     client.token.wait();
                 } catch (InterruptedException e) {
@@ -25,14 +26,17 @@ public class MovePerformerRunnable implements Runnable {
                 }
             }
             while (true) {
-                if(null != client.getMove())
+                if (null != client.getMove()) {
                     Move.perform(client);
-                if(null != client.getNext())
+                }
+                if (null != client.getNext()) {
+                    P2PCommunicationService.giveToken(client);
                     try {
                         client.token.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                }
             }
         }
     }

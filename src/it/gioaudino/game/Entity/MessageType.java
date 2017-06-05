@@ -5,5 +5,5 @@ package it.gioaudino.game.Entity;
  * Package it.gioaudino.game.Entity in game
  */
 public enum MessageType {
-    TYPE_NEW, TYPE_TOKEN, TYPE_BOMB, TYPE_DEAD, TYPE_MOVE, TYPE_ACK, TYPE_PROBLEM, TYPE_FIND_POSITION
+    TYPE_NEW, TYPE_TOKEN, TYPE_BOMB, TYPE_DEAD, TYPE_MOVE, TYPE_ACK, TYPE_NO, TYPE_PROBLEM, TYPE_QUIT, TYPE_FIND_POSITION, TYPE_WIN
 }

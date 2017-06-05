@@ -16,7 +16,6 @@ public class Client {
         Thread menu = new Thread(new RunnableMenuHandler(client));
         Thread listener = new Thread(new ClientListener(client));
 
-
         listener.start();
         menu.start();
         menu.join();

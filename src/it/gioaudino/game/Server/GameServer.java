@@ -81,7 +81,7 @@ public class GameServer {
         try {
             game.addPeer(peer);
         } catch (IllegalArgumentException e) {
-            return buildResponse("Player " + peer.getUsername() + " already exists in game " + gameName, Response.Status.BAD_REQUEST);
+            return buildResponse(e.getMessage(), Response.Status.BAD_REQUEST);
         }
         return Response.ok(GsonService.getSimpleInstance().toJson(game)).build();
     }
@@ -93,14 +93,15 @@ public class GameServer {
         username = urlDecode(username);
 
         if (!gameManager.hasGame(gameName))
-            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
+            return buildResponse("Game " + gameName + " does not exist (anymore?).", Response.Status.NOT_FOUND);
         Game game = gameManager.getGame(gameName);
         if (!game.getPeers().containsKey(username))
             return buildResponse("Player " + username + " does not exist in game " + gameName, Response.Status.NOT_FOUND);
         Peer peer = game.removePeer(username);
         if (null == peer)
             return buildResponse("Something happened while deleting player", Response.Status.INTERNAL_SERVER_ERROR);
-
+        if(game.getPeers().size() == 0)
+            gameManager.removeGame(game.getName());
         return Response.ok().build();
     }
 
@@ -109,7 +110,7 @@ public class GameServer {
     @Path("/game/{gameName}")
     public Response deleteSingleGame(@PathParam("gameName") String gameName) {
         if (!gameManager.hasGame(gameName))
-            return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.BAD_REQUEST);
+            return buildResponse("Game " + gameName + " does not exist (anymore?).", Response.Status.BAD_REQUEST);
         gameManager.removeGame(gameName);
         return Response.ok("Games deleted").build();
     }

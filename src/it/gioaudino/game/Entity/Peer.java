@@ -59,4 +59,13 @@ public class Peer {
     public String toString(){
         return this.fullAddress;
     }
+
+    @Override
+    public int hashCode() {
+        int result = username.hashCode();
+        result = 31 * result + address.hashCode();
+        result = 31 * result + port;
+        result = 31 * result + (fullAddress != null ? fullAddress.hashCode() : 0);
+        return result;
+    }
 }

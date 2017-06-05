@@ -1,5 +1,7 @@
 package it.gioaudino.game.Entity;
 
+import java.util.Random;
+
 /**
  * Created by gioaudino on 12/05/17.
  */
@@ -57,13 +59,28 @@ public class Position {
         return ZONE_YELLOW;
     }
 
+    public static Position getRandomPosition(int gridSize) {
+        Random generator = new Random();
+        int x = generator.nextInt(gridSize);
+        int y = generator.nextInt(gridSize);
+        return new Position(x, y, gridSize);
+    }
+
     @Override
     public String toString() {
-        return "(" + x + ", " + y + ") - " + this.getZone();
+        return "(" + (x + 1) + ", " + (y + 1) + ") - " + this.getZone();
     }
 
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Position && x == ((Position) obj).getX() && y == ((Position) obj).getY();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = x;
+        result = 31 * result + y;
+        result = 31 * result + gridSize;
+        return result;
     }
 }
