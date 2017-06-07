@@ -1,10 +1,7 @@
 package it.gioaudino.game.Service;
 
 import it.gioaudino.game.Client.ClientObject;
-import it.gioaudino.game.Entity.Message;
-import it.gioaudino.game.Entity.MessageType;
-import it.gioaudino.game.Entity.Peer;
-import it.gioaudino.game.Entity.Position;
+import it.gioaudino.game.Entity.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -38,14 +35,15 @@ public class MessageHandler {
 
     private static Message move(ClientObject client, Message message) {
         if (client.getPosition().equals(message.getPosition())) {
-            client.die(message.getKiller());
+            client.setStatus(ClientStatus.STATUS_DEAD);
+            new Thread(() -> client.die(message.getSender())).start();
         }
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 
     private static Message dead(ClientObject client, Message message) {
         if (client.getUser().equals(message.getKiller())) {
-            client.increaseScore();
+            client.increaseScore(message.getSender());
         }
         removeSocketAndSetNext(client, message);
         return buildResponseMessage(client, MessageType.TYPE_ACK);
@@ -67,7 +65,10 @@ public class MessageHandler {
             if (getCanonicalRemoteAddress(socket).equals(message.getSender().toString())) {
                 s = socket;
                 if (getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress()) && client.getConnections().indexOf(s) == client.getConnections().size() - 1) {
-                    client.setNext();
+                    if (client.getConnections().size() == 1)
+                        client.setNext();
+                    else
+                        client.clearNext();
                 }
                 next = true;
             }
@@ -78,7 +79,7 @@ public class MessageHandler {
     private static Message findPosition(ClientObject client, Message message) {
         Position position = message.getPosition();
         if (client.getPosition().equals(position))
-            return buildResponseMessage(client, MessageType.TYPE_NO);
+            return buildResponseMessage(client, MessageType.TYPE_NACK);
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 

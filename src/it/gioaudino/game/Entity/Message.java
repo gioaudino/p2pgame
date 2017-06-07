@@ -13,7 +13,8 @@ public class Message {
     private MessageType type;
     private Position position;
     private Peer killer;
-    private String jsonParameters;
+    private PositionZone zone;
+
 
     public Peer getSender() {
         return sender;
@@ -47,12 +48,12 @@ public class Message {
         this.killer = killer;
     }
 
-    public String getJsonParameters() {
-        return jsonParameters;
+    public PositionZone getZone() {
+        return zone;
     }
 
-    public void setJsonParameters(String jsonParameters) {
-        this.jsonParameters = jsonParameters;
+    public void setZone(PositionZone zone) {
+        this.zone = zone;
     }
 
     @Override

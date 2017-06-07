@@ -1,5 +1,6 @@
 package it.gioaudino.game.Client;
 
+import it.gioaudino.game.Entity.ClientStatus;
 import it.gioaudino.game.Entity.Message;
 import it.gioaudino.game.Entity.MessageType;
 import it.gioaudino.game.Exception.CannotSetCommunicationPipeException;
@@ -11,6 +12,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+
 
 /**
  * Created by gioaudino on 31/05/17.
@@ -36,17 +38,27 @@ public class InFromPeer implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
             try {
                 String input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
                 if (message.getType() != MessageType.TYPE_TOKEN)
                     System.out.println("RECEIVED MESSAGE: " + message.getType());
-                Message response = MessageHandler.handleMessage(client, message);
+                Message response;
 
-                out.writeBytes(GsonService.getSimpleInstance().toJson(response) + "\n");
+                if (message.getType() != MessageType.TYPE_TOKEN && client.getStatus() == ClientStatus.STATUS_DEAD) {
+                    response = new Message();
+                    response.setSender(client.getUser());
+                    response.setType(MessageType.TYPE_ACK);
+                } else {
+                    response = MessageHandler.handleMessage(client, message);
+                }
+                String serializedResponse = GsonService.getSimpleInstance().toJson(response);
+                out.writeBytes(serializedResponse + "\n");
+
             } catch (IOException e) {
                 e.printStackTrace();
+                return;
             }
         }
     }

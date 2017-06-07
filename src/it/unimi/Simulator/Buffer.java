@@ -7,5 +7,6 @@ import java.util.List;
  */
 public interface Buffer<T extends Measurement> {
     void addNewMeasurement(T t);
+
     List<T> readAllAndClean();
 }

@@ -1,5 +1,6 @@
 package it.gioaudino.game.Client;
 
+import it.gioaudino.game.Entity.ClientStatus;
 import it.gioaudino.game.Entity.Move;
 import it.gioaudino.game.Service.P2PCommunicationService;
 
@@ -25,7 +26,7 @@ public class MovePerformerRunnable implements Runnable {
                     e.printStackTrace();
                 }
             }
-            while (true) {
+            while (client.getStatus() == ClientStatus.STATUS_PLAYING) {
                 if (null != client.getMove()) {
                     Move.perform(client);
                 }

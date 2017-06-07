@@ -2,14 +2,11 @@ package it.gioaudino.game.Entity;
 
 import java.util.Random;
 
+
 /**
  * Created by gioaudino on 12/05/17.
  */
 public class Position {
-    public static final String ZONE_GREEN = "GREEN";
-    public static final String ZONE_RED = "RED";
-    public static final String ZONE_BLUE = "BLUE";
-    public static final String ZONE_YELLOW = "YELLOW";
 
     private int x;
     private int y;
@@ -49,14 +46,17 @@ public class Position {
         this.gridSize = gridSize;
     }
 
-    private String getZone() {
+    public PositionZone getZone() {
         if (x < gridSize / 2) {
-            if (y < gridSize / 2) return ZONE_GREEN;
-            return ZONE_BLUE;
+            if (y < gridSize / 2) return PositionZone.ZONE_GREEN;
+            return PositionZone.ZONE_BLUE;
         }
 
-        if (y < gridSize / 2) return ZONE_RED;
-        return ZONE_YELLOW;
+        if (y < gridSize / 2) return PositionZone.ZONE_RED;
+        return PositionZone.ZONE_YELLOW;
+    }
+    private String getZoneAsString(){
+        return PositionZone.getZoneAsString(this.getZone());
     }
 
     public static Position getRandomPosition(int gridSize) {
@@ -68,7 +68,7 @@ public class Position {
 
     @Override
     public String toString() {
-        return "(" + (x + 1) + ", " + (y + 1) + ") - " + this.getZone();
+        return "(" + (x + 1) + ", " + (y + 1) + ") \u2014 " + this.getZoneAsString();
     }
 
     @Override

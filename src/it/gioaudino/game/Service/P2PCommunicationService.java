@@ -28,14 +28,15 @@ public class P2PCommunicationService {
     public static void generateConnections(ClientObject client) {
         if (client.getGame().getPeers().size() > 0) {
             Collection<Peer> peers = client.getGame().getPeers().values();
-            peers.removeIf(el -> el.equals(client.getUser()));
             for (Peer peer : peers) {
-                try {
-                    System.out.println("Connecting to " + peer);
-                    Socket socket = new Socket(peer.getAddress(), peer.getPort());
-                    client.addConnection(socket);
-                } catch (IOException e) {
+                if (!peer.equals(client.getUser())) {
+                    try {
+                        System.out.println("Connecting to " + peer);
+                        Socket socket = new Socket(peer.getAddress(), peer.getPort());
+                        client.addConnection(socket);
+                    } catch (IOException e) {
 //                System.err.println("Peer " + peer.getUsername() + " is unreachable.");
+                    }
                 }
             }
         }
@@ -43,13 +44,11 @@ public class P2PCommunicationService {
 
     public static void newPlayer(ClientObject client) {
         if (client.getConnections().size() > 0) {
-            Collection<Socket> sockets = client.getConnections();
-
             Message message = new Message();
             message.setSender(client.getUser());
             message.setType(MessageType.TYPE_NEW);
 
-            fireToSocketsAndWait(sockets, message);
+            fireToSocketsAndWait(client.getConnections(), message);
         }
     }
 
@@ -78,7 +77,7 @@ public class P2PCommunicationService {
                 try {
                     P2PCommunicationService.fireMessage(socket, message, true);
                 } catch (NegativeResponseException e) {
-                    responseType = MessageType.TYPE_NO;
+                    responseType = MessageType.TYPE_NACK;
                 }
             }
         }
@@ -101,7 +100,7 @@ public class P2PCommunicationService {
             }
         }
 
-        threads.removeIf(el -> el.responseType != MessageType.TYPE_NO);
+        threads.removeIf(el -> el.responseType != MessageType.TYPE_NACK);
 
         return threads.size() > 0 ? findPosition(client) : position;
     }
@@ -177,7 +176,7 @@ public class P2PCommunicationService {
             switch (responseMessage.getType()) {
                 case TYPE_ACK:
                     break;
-                case TYPE_NO:
+                case TYPE_NACK:
                     throw new NegativeResponseException();
                 default:
                     throw new NotAcknowledgedException();
@@ -201,8 +200,12 @@ public class P2PCommunicationService {
         try {
             return GsonService.getSimpleInstance().fromJson(response, Message.class);
         } catch (JsonSyntaxException e) {
-            e.printStackTrace();
-            System.out.println(response);
+            synchronized (System.out) {
+                synchronized (System.err) {
+                    e.printStackTrace();
+                }
+                System.out.println(response);
+            }
         }
         return null;
     }

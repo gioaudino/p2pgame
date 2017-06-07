@@ -26,7 +26,9 @@ public class ClientObject {
     private List<Socket> connections = new ArrayList<>();
     private Socket next;
     private Move move;
-    private boolean haveIWon;
+    private boolean haveIWon = false;
+    private boolean killed = false;
+    private MovePerformerRunnable mover;
 
     public final Object token = new Object();
 
@@ -39,10 +41,11 @@ public class ClientObject {
         return score;
     }
 
-    public void increaseScore() {
+    public void increaseScore(Peer dead) {
         this.score++;
-        if (checkWonGame())
-            win();
+        System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        System.out.println("\t\tWell done! You scored one point killing " + dead.getUsername());
+        System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     }
 
     public ServerSocket getServerSocket() {
@@ -121,6 +124,14 @@ public class ClientObject {
         return connections;
     }
 
+    public boolean isKilled() {
+        return killed;
+    }
+
+    public void setKilled() {
+        this.killed = true;
+    }
+
     public Peer buildPeer(String username) {
         this.user = new Peer(username, serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort());
         return this.user;
@@ -131,13 +142,15 @@ public class ClientObject {
         this.setStatus(ClientStatus.STATUS_PLAYING);
         this.setPosition(Position.getRandomPosition(game.getSize()));
         UserInteractionHandler.printPlayingHeader(this);
-        new Thread(new MovePerformerRunnable(this)).start();
+        this.mover = new MovePerformerRunnable(this);
+        new Thread(this.mover).start();
     }
 
     public void prepareToJoinGame() {
-        P2PCommunicationService.generateConnections(this);
+        this.mover = new MovePerformerRunnable(this);
+        new Thread(() -> P2PCommunicationService.generateConnections(this)).start();
         this.setNext();
-        new Thread(new MovePerformerRunnable(this)).start();
+        new Thread(this.mover).start();
         P2PCommunicationService.newPlayer(this);
 
         this.position = P2PCommunicationService.findPosition(this);
@@ -145,9 +158,8 @@ public class ClientObject {
 
     }
 
-
     public boolean checkWonGame() {
-        this.haveIWon = this.score >= this.game.getPoints();
+        this.haveIWon = this.game != null && this.score >= this.game.getPoints();
         return haveIWon;
     }
 
@@ -156,7 +168,9 @@ public class ClientObject {
     }
 
     public void quitGame() {
+        this.setStatus(ClientStatus.STATUS_DEAD);
         if (exitFromGame()) return;
+
         P2PCommunicationService.quitGame(this);
         this.score = 0;
         this.connections = new ArrayList<>();
@@ -183,7 +197,7 @@ public class ClientObject {
         P2PCommunicationService.die(this, killer);
 
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        System.out.println("\tYou just got killed by " + killer.getUsername());
+        System.out.println("\t\t\t\tYou just got killed by " + killer.getUsername());
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 
         this.score = 0;
@@ -194,7 +208,7 @@ public class ClientObject {
         this.status = ClientStatus.STATUS_NOT_PLAYING;
     }
 
-    private void win() {
+    public void win() {
 
     }
 

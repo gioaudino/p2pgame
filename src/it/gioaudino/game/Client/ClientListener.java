@@ -26,11 +26,8 @@ public class ClientListener implements Runnable {
             try {
                 Socket connectionSocket = serverSocket.accept();
                 System.out.println("Received connection! -- " + connectionSocket.getRemoteSocketAddress());
-                Thread thread = new Thread(new InFromPeer(client, connectionSocket));
-                thread.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (CannotSetCommunicationPipeException e) {
+                new Thread(new InFromPeer(client, connectionSocket)).start();
+            } catch (IOException | CannotSetCommunicationPipeException e) {
                 e.printStackTrace();
             }
 
