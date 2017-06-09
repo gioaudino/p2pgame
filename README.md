@@ -1,7 +1,8 @@
 # Progetto di Sistemi Distribuiti e Pervasivi   
 # Laboratorio di Sistemi Distribuiti e Pervasivi   
 # Aprile 2017   
-# 1 Descrizione del progetto  Lo scopo del progetto è quello di realizzare un gioco on-line multiplayer (MMOG, Massive Multiplayer Online Game) semplificato. Il gioco consiste nello spostare un personaggio virtuale all’interno di un’area di gioco, con
+# 1 Descrizione del progetto
+Lo scopo del progetto è quello di realizzare un gioco on-line multiplayer (MMOG, Massive Multiplayer Online Game) semplificato. Il gioco consiste nello spostare un personaggio virtuale all’interno di un’area di gioco, con
 lo scopo di ottenere punti eliminando un determinato numero di giocatori
 avversari. Lo spostamento dei giocatori nell’area e tutta la logica di gioco devono essere gestiti in modo totalmente distribuito tramite una apposita rete *peer* to *peer* formata dai giocatori facenti parte della partita. Un server REST ha il compito di gestire le partite in corso. Quando un giocatore si connette al server può decidere se creare una nuova partita o se aggiungersi ad una partita già esistente. Le prossime sezioni di questo documento de scriveranno in dettaglio le regole del gioco e le componenti del sistema da implementare.   
 # 2 Regole del gioco   
@@ -33,4 +34,4 @@ Per ragioni di analisi, è necessario memorizzare informazioni sui giocatori e s
 # 8.2 Seconda parte
 La tecnica di gestione della sincronizzazione che si richiede di implementare nella versione base del progetto soffre di problemi di scalabilità con l’aumentare del numero di giocatori. Ad esempio, spostamenti di utenti diversi in celle diverse non dovrebbero essere sequenzializzati, in quanto possono essere svolti in parallelo. Si proponga quindi una soluzione alternativa maggiormente scalabile e con un più alto grado di concorrenza rispetto alla rete ad anello.   
 # 9 Aggiornamenti
-Qualora fosse necessario, il testo dell’attuale progetto verrà aggiornato al fine di renderne più semplice l’interpretazione. Le nuove versioni del progetto verranno pubblicate sul sito del corso. Si consiglia agli studenti di controllare regolarmente il sito. Al fine di incentivare la presentazione del progetto nei primi appelli disponibili, lo svolgimento della parte facoltativa 1 diventa obbligatoria a par- tire dall’appello di Settembre (incluso), mentre entrambe le parti facoltative (1 e 2) saranno obbligatorie negli appelli successivi. 
+Qualora fosse necessario, il testo dell’attuale progetto verrà aggiornato al fine di renderne più semplice l’interpretazione. Le nuove versioni del progetto verranno pubblicate sul sito del corso. Si consiglia agli studenti di controllare regolarmente il sito. Al fine di incentivare la presentazione del progetto nei primi appelli disponibili, lo svolgimento della parte facoltativa 1 diventa obbligatoria a par- tire dall’appello di Settembre (incluso), mentre entrambe le parti facoltative (1 e 2) saranno obbligatorie negli appelli successivi.
