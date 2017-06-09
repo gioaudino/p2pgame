@@ -68,7 +68,7 @@ public class Position {
 
     @Override
     public String toString() {
-        return "(" + (x + 1) + ", " + (y + 1) + ") \u2014 " + this.getZoneAsString();
+        return "(" + (y + 1) + ", " + (x + 1) + ") \u2014 " + this.getZoneAsString();
     }
 
     @Override

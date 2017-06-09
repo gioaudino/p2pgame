@@ -5,6 +5,8 @@ import it.gioaudino.game.Entity.*;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.text.MessageFormat;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -19,7 +21,7 @@ public class MessageHandler {
             case TYPE_NEW:
                 return newPlayer(client, message);
             case TYPE_TOKEN:
-                return token(client);
+                return token(client, message);
             case TYPE_FIND_POSITION:
                 return findPosition(client, message);
             case TYPE_QUIT:
@@ -55,25 +57,61 @@ public class MessageHandler {
     }
 
     private static void removeSocketAndSetNext(ClientObject client, Message message) {
-        Socket s = null;
-        boolean next = false;
-        for (Socket socket : client.getConnections()) {
-            if (next && getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress())) {
-                client.setNext(socket);
+        MessageFormat format = new MessageFormat("Next: {0} -- Sender: {1} -- Connections.size(): {2}");
+        System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
+
+        if (client.getConnections().size() == 1 && getCanonicalRemoteAddress(client.getConnections().get(0)).equals(message.getSender().toString())) {
+            System.out.println("I'm all alone!");
+            client.clearConnections();
+            client.clearNext();
+            System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
+            return;
+        }
+
+        Socket newNext = null;
+        Socket toBeRemoved = null;
+        ListIterator<Socket> sockets = client.getConnections().listIterator();
+
+        while (sockets.hasNext()) {
+            Socket s = sockets.next();
+            String canonicalAddress = getCanonicalRemoteAddress(s);
+            if (canonicalAddress.equals(message.getSender().toString())) {
+                System.out.println("Found socket to be removed");
+                toBeRemoved = s;
+                if (canonicalAddress.equals(getCanonicalRemoteAddress(client.getNext())))
+                    System.out.println("I'm removing my next. Have to update it");
+                newNext = sockets.hasNext() ? sockets.next() : client.getConnections().get(0);
                 break;
             }
-            if (getCanonicalRemoteAddress(socket).equals(message.getSender().toString())) {
-                s = socket;
-                if (getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress()) && client.getConnections().indexOf(s) == client.getConnections().size() - 1) {
-                    if (client.getConnections().size() == 1)
-                        client.setNext();
-                    else
-                        client.clearNext();
-                }
-                next = true;
-            }
         }
-        client.removeConnection(s);
+
+        System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
+
+        client.removeConnection(toBeRemoved);
+        if (newNext != null) {
+            System.out.println("Updating next");
+            client.setNext(newNext);
+        }
+        System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
+
+
+//        for (Socket socket : client.getConnections()) {
+//            if (next && getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress())) {
+//                client.setNext(socket);
+//                break;
+//            }
+//            if (getCanonicalRemoteAddress(socket).equals(message.getSender().toString())) {
+//                s = socket;
+//                if (getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress()) && client.getConnections().indexOf(s) == client.getConnections().size() - 1) {
+//                    if (client.getConnections().size() > 1)
+//                        client.setNext();
+//                    else
+//                        client.clearNext();
+//                }
+//                next = true;
+//            }
+//        }
+//        client.removeConnection(s);
     }
 
     private static Message findPosition(ClientObject client, Message message) {
@@ -106,7 +144,8 @@ public class MessageHandler {
         return null;
     }
 
-    private static Message token(ClientObject client) {
+    private static Message token(ClientObject client, Message message) {
+//        System.out.println("+-+-+- RECEIVED TOKEN FROM " + message.getSender() + " -+-+-+");
         synchronized (client.token) {
             client.token.notify();
         }

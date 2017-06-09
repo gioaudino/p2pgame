@@ -1,5 +1,6 @@
 package it.gioaudino.game.Client;
 
+import com.google.gson.JsonSyntaxException;
 import it.gioaudino.game.Entity.ClientStatus;
 import it.gioaudino.game.Entity.Message;
 import it.gioaudino.game.Entity.MessageType;
@@ -38,9 +39,10 @@ public class InFromPeer implements Runnable {
 
     @Override
     public void run() {
+        String input = "";
         while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
             try {
-                String input = in.readLine();
+                input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
                 if (message.getType() != MessageType.TYPE_TOKEN)
                     System.out.println("RECEIVED MESSAGE: " + message.getType());
@@ -55,10 +57,18 @@ public class InFromPeer implements Runnable {
                 }
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 out.writeBytes(serializedResponse + "\n");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
+            } catch (IOException | JsonSyntaxException e) {
+                    System.err.println("\nERROR" + input + "++++++++++\n");
+                Message response = new Message();
+                response.setSender(client.getUser());
+                response.setType(MessageType.TYPE_PROBLEM);
+                String serializedResponse = GsonService.getSimpleInstance().toJson(response);
+                try {
+                    out.writeBytes(serializedResponse + "\n");
+                } catch (IOException e1) {
+                    System.err.println("INNER PROBLEM!!");
+                    e1.printStackTrace();
+                }
             }
         }
     }

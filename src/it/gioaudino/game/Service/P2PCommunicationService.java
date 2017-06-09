@@ -110,7 +110,7 @@ public class P2PCommunicationService {
         Message message = new Message();
         message.setSender(client.getUser());
         message.setType(MessageType.TYPE_TOKEN);
-//        System.out.println("+-+-+- SENDING TOKEN TO " + getCanonicalRemoteAddress(recipient) + " -+-+-+");
+//        System.out.println("+-+-+- SENDING TOKEN TO " + recipient.getInetAddress().getCanonicalHostName() + ":" +recipient.getPort() + " -+-+-+");
         fireMessage(recipient, message, false);
     }
 
@@ -165,8 +165,15 @@ public class P2PCommunicationService {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NotAcknowledgedException e) {
-            if (attempts - 1 > 0) doFireAckMessage(socket, message, attempts - 1);
-            throw e;
+            if (attempts - 1 > 0) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                doFireAckMessage(socket, message, attempts - 1);
+            } else
+                throw e;
         }
     }
 
@@ -185,8 +192,15 @@ public class P2PCommunicationService {
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NotAcknowledgedException e) {
-            if (attempts - 1 > 0) doFireAckMessage(socket, message, attempts - 1);
-            throw e;
+            if (attempts - 1 > 0) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                doFireAckNoMessage(socket, message, attempts - 1);}
+            else
+                throw e;
         }
     }
 
@@ -200,14 +214,12 @@ public class P2PCommunicationService {
         try {
             return GsonService.getSimpleInstance().fromJson(response, Message.class);
         } catch (JsonSyntaxException e) {
-            synchronized (System.out) {
-                synchronized (System.err) {
-                    e.printStackTrace();
-                }
-                System.out.println(response);
-            }
+            System.err.println(response);
+            Message resp = new Message();
+            resp.setType(MessageType.TYPE_PROBLEM);
+            return resp;
         }
-        return null;
+
     }
 
 

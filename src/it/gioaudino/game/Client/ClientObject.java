@@ -28,6 +28,7 @@ public class ClientObject {
     private Move move;
     private boolean haveIWon = false;
     private boolean killed = false;
+    private boolean ready = false;
     private MovePerformerRunnable mover;
 
     public final Object token = new Object();
@@ -106,6 +107,9 @@ public class ClientObject {
 
     public void clearNext() {
         this.next = null;
+        synchronized (this.token) {
+            this.token.notify();
+        }
     }
 
     public Socket getNext() {
@@ -132,6 +136,18 @@ public class ClientObject {
         this.killed = true;
     }
 
+    public boolean isReady() {
+        return ready;
+    }
+
+    public void setReady() {
+        setReady(true);
+    }
+
+    public void setReady(boolean ready) {
+        this.ready = ready;
+    }
+
     public Peer buildPeer(String username) {
         this.user = new Peer(username, serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort());
         return this.user;
@@ -148,7 +164,7 @@ public class ClientObject {
 
     public void prepareToJoinGame() {
         this.mover = new MovePerformerRunnable(this);
-        new Thread(() -> P2PCommunicationService.generateConnections(this)).start();
+        P2PCommunicationService.generateConnections(this);
         this.setNext();
         new Thread(this.mover).start();
         P2PCommunicationService.newPlayer(this);
