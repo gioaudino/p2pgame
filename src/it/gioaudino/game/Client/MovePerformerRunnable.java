@@ -26,7 +26,7 @@ public class MovePerformerRunnable implements Runnable {
                     e.printStackTrace();
                 }
             }
-//            long last = System.currentTimeMillis() / 1000;
+            long last = System.currentTimeMillis() / 1000;
             while (client.getStatus() == ClientStatus.STATUS_PLAYING) {
 //                if(System.currentTimeMillis()/1000 - last >=  5){
 //                    last = System.currentTimeMillis()/1000;

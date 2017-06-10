@@ -88,6 +88,11 @@ public class MessageHandler {
         System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
 
         client.removeConnection(toBeRemoved);
+        try {
+            toBeRemoved.close();
+        } catch (IOException | NullPointerException ignored) {
+
+        }
         if (newNext != null) {
             System.out.println("Updating next");
             client.setNext(newNext);

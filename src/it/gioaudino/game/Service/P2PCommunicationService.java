@@ -204,7 +204,7 @@ public class P2PCommunicationService {
         }
     }
 
-    private static Message sendMessageAndGetResponse(Socket socket, Message message) throws IOException {
+    private static synchronized Message sendMessageAndGetResponse(Socket socket, Message message) throws IOException {
         if (message.getType() != MessageType.TYPE_TOKEN) System.out.println("SENDING MESSAGE " + message.getType());
         String serializedMessage = GsonService.getSimpleInstance().toJson(message);
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());

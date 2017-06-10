@@ -19,7 +19,9 @@ public class Client {
 
         listener.start();
         menu.start();
+
         menu.join();
+        System.exit(0);
 
     }
 }

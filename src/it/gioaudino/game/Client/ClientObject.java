@@ -214,6 +214,7 @@ public class ClientObject {
 
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
         System.out.println("\t\t\t\tYou just got killed by " + killer.getUsername());
+        System.out.println("\t\t\t\tPress enter to continue");
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 
         this.score = 0;

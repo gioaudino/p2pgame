@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class UserInteractionHandler {
 
     private static Scanner in = new Scanner(System.in);
-    private static final String[] notPlayingChoices = {"1 - Change your username", "2 - Create new game", "3 - List existing games", "4 - Join existing game", "5 - Get out!"};
+    private static final String[] notPlayingChoices = {"1 \u2014 Change your username", "2 \u2014 Create new game", "3 \u2014 List existing games", "4 \u2014 Join existing game", "5 \u2014 Get out!"};
     private static final String[] playingChoices = {"\u00B7 Move with WASD", "\u00B7 Print info with I", "\u00B7 Throw bomb with B", "\u00B7 Quit with Q"};
     private static final Pattern inputPattern = Pattern.compile("[WASDIQB]", Pattern.CASE_INSENSITIVE);
 
@@ -128,7 +128,6 @@ public class UserInteractionHandler {
     }
 
     private static void getGamesList() {
-        System.out.println("Here are the games you can join:\n");
         List<Game> games = null;
         try {
             games = ClientRESTCommunicationService.getExistingGames();
@@ -138,11 +137,14 @@ public class UserInteractionHandler {
             System.out.println(e.getMessage());
         }
 
-        if (null != games) {
+        if (null != games && games.size() > 0) {
+            System.out.println("Here are the games you can join:\n");
             for (Game g : games) {
                 System.out.println(g.getName());
                 System.out.println("\tGrid side length: " + g.getSize() + "\n\tPoints to win: " + g.getPoints() + "\n\tCreated at: " + g.getCreatedAt());
             }
+        } else {
+            System.out.println("There are no games you can join right now. Create one!");
         }
     }
 

@@ -13,6 +13,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.net.SocketException;
 
 
 /**
@@ -39,11 +40,13 @@ public class InFromPeer implements Runnable {
 
     @Override
     public void run() {
-        String input = "";
+        String input = null;
+
         while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
             try {
                 input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
+
                 if (message.getType() != MessageType.TYPE_TOKEN)
                     System.out.println("RECEIVED MESSAGE: " + message.getType());
                 Message response;
@@ -57,8 +60,10 @@ public class InFromPeer implements Runnable {
                 }
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 out.writeBytes(serializedResponse + "\n");
-            } catch (IOException | JsonSyntaxException e) {
-                    System.err.println("\nERROR" + input + "++++++++++\n");
+            } catch(IOException ex){
+                System.out.println("Killing listening socket");
+                return;
+            } catch (JsonSyntaxException e) {
                 Message response = new Message();
                 response.setSender(client.getUser());
                 response.setType(MessageType.TYPE_PROBLEM);
@@ -67,6 +72,12 @@ public class InFromPeer implements Runnable {
                     out.writeBytes(serializedResponse + "\n");
                 } catch (IOException e1) {
                     System.err.println("INNER PROBLEM!!");
+                    e1.printStackTrace();
+                    break;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
             }
