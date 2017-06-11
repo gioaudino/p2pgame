@@ -10,18 +10,19 @@ import java.util.List;
  * Created by gioaudino on 07/06/17.
  * Package it.gioaudino.game.Simulator in game
  */
-public class BufferedMeasurements implements Buffer {
+public class BufferedMeasurements<T extends Measurement> implements Buffer<T> {
 
-    private List<Measurement> buffer = new ArrayList<>();
+    private List<T> buffer = new ArrayList<>();
+
 
     @Override
-    public void addNewMeasurement(Measurement measurement) {
-        buffer.add(measurement);
+    public void addNewMeasurement(T value) {
+        this.buffer.add(value);
     }
 
     @Override
-    public List<Measurement> readAllAndClean() {
-        List<Measurement> tbr = buffer;
+    public List<T> readAllAndClean() {
+        List<T> tbr = buffer;
         buffer = new ArrayList<>();
         return tbr;
     }

@@ -60,7 +60,7 @@ public class InFromPeer implements Runnable {
                 }
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 out.writeBytes(serializedResponse + "\n");
-            } catch(IOException ex){
+            } catch(IOException | NullPointerException ex){
                 System.out.println("Killing listening socket");
                 return;
             } catch (JsonSyntaxException e) {

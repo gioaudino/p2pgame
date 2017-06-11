@@ -13,7 +13,7 @@ public class Message {
     private MessageType type;
     private Position position;
     private Peer killer;
-    private PositionZone zone;
+    private Bomb bomb;
 
 
     public Peer getSender() {
@@ -48,12 +48,12 @@ public class Message {
         this.killer = killer;
     }
 
-    public PositionZone getZone() {
-        return zone;
+    public Bomb getBomb() {
+        return bomb;
     }
 
-    public void setZone(PositionZone zone) {
-        this.zone = zone;
+    public void setBomb(Bomb bomb) {
+        this.bomb = bomb;
     }
 
     @Override

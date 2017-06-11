@@ -28,6 +28,8 @@ public class MessageHandler {
                 return quit(client, message);
             case TYPE_DEAD:
                 return dead(client, message);
+            case TYPE_WIN:
+                return win(client, message);
             case TYPE_MOVE:
                 return move(client, message);
             default:
@@ -154,6 +156,11 @@ public class MessageHandler {
         synchronized (client.token) {
             client.token.notify();
         }
+        return buildResponseMessage(client, MessageType.TYPE_ACK);
+    }
+
+    private static Message win(ClientObject client, Message message) {
+        client.endGame(message.getSender());
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 

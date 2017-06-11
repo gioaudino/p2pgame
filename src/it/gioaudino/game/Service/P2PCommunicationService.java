@@ -131,6 +131,15 @@ public class P2PCommunicationService {
         fireToSocketsAndWait(client.getConnections(), message);
     }
 
+    public static void win(ClientObject client){
+        if (client.getConnections().size() > 0) {
+            Message message = new Message();
+            message.setSender(client.getUser());
+            message.setType(MessageType.TYPE_WIN);
+            fireToSocketsAndWait(client.getConnections(), message);
+        }
+    }
+
     private static void fireToSocketsAndWait(Collection<Socket> sockets, Message message) {
         ArrayList<Thread> threads = new ArrayList<>();
         for (Socket socket : sockets) {

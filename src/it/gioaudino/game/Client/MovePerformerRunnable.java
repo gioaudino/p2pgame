@@ -28,20 +28,20 @@ public class MovePerformerRunnable implements Runnable {
             }
             long last = System.currentTimeMillis() / 1000;
             while (client.getStatus() == ClientStatus.STATUS_PLAYING) {
-//                if(System.currentTimeMillis()/1000 - last >=  5){
-//                    last = System.currentTimeMillis()/1000;
-//                    System.out.print("I'm still trying to perform moves! Next exists? ");
-//                    System.out.println(client.getNext() != null);
-//                }
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException ignored) {
-//                }
+                if (System.currentTimeMillis() / 1000 - last >= 5) {
+                    last = System.currentTimeMillis() / 1000;
+                    System.out.print("I'm still trying to perform moves! Next exists? ");
+                    System.out.println(client.getNext() != null);
+                }
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ignored) {
+                }
                 if (null != client.getMove()) {
                     Move.perform(client);
                 }
                 if (null != client.getNext()) {
-                    P2PCommunicationService.giveToken(client);
+                    new Thread(() -> P2PCommunicationService.giveToken(client)).start();
                     try {
                         client.token.wait();
                     } catch (InterruptedException e) {

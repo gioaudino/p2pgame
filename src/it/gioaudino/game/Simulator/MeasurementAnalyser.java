@@ -1,5 +1,6 @@
 package it.gioaudino.game.Simulator;
 
+import it.unimi.Simulator.Buffer;
 import it.unimi.Simulator.Measurement;
 
 import java.util.List;
@@ -11,10 +12,10 @@ import java.util.List;
 public class MeasurementAnalyser implements Runnable {
 
     private static final int SLEEPING_TIME = 1000;
-    private BufferedMeasurements buffer;
+    private Buffer<Measurement> buffer;
     private boolean isKilled = false;
 
-    public MeasurementAnalyser(BufferedMeasurements buffer) {
+    public MeasurementAnalyser(Buffer<Measurement> buffer) {
         this.buffer = buffer;
     }
 
@@ -30,8 +31,8 @@ public class MeasurementAnalyser implements Runnable {
             } catch (Exception ignored) {
             }
             List<Measurement> measurements = buffer.readAllAndClean();
-            for(Measurement measure: measurements){
-
+            for (Measurement measure : measurements) {
+                System.out.println(measure.getValue());
             }
 
         }
