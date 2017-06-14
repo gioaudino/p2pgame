@@ -16,6 +16,8 @@ import java.util.NoSuchElementException;
  */
 public class MessageHandler {
 
+    public static final boolean DEBUG = false;
+
     public static Message handleMessage(ClientObject client, Message message) {
         switch (message.getType()) {
             case TYPE_NEW:
@@ -102,28 +104,11 @@ public class MessageHandler {
         System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
 
 
-//        for (Socket socket : client.getConnections()) {
-//            if (next && getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress())) {
-//                client.setNext(socket);
-//                break;
-//            }
-//            if (getCanonicalRemoteAddress(socket).equals(message.getSender().toString())) {
-//                s = socket;
-//                if (getCanonicalRemoteAddress(client.getNext()).equals(message.getSender().getFullAddress()) && client.getConnections().indexOf(s) == client.getConnections().size() - 1) {
-//                    if (client.getConnections().size() > 1)
-//                        client.setNext();
-//                    else
-//                        client.clearNext();
-//                }
-//                next = true;
-//            }
-//        }
-//        client.removeConnection(s);
     }
 
     private static Message findPosition(ClientObject client, Message message) {
         Position position = message.getPosition();
-        if (client.getPosition().equals(position))
+        if (client.getPosition() != null && client.getPosition().equals(position))
             return buildResponseMessage(client, MessageType.TYPE_NACK);
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
@@ -152,10 +137,16 @@ public class MessageHandler {
     }
 
     private static Message token(ClientObject client, Message message) {
-//        System.out.println("+-+-+- RECEIVED TOKEN FROM " + message.getSender() + " -+-+-+");
-        synchronized (client.token) {
-            client.token.notify();
+        if (DEBUG) {
+            System.out.println("+-+-+- RECEIVED TOKEN FROM " + message.getSender() + " -+-+-+ " + (System.currentTimeMillis()));
+            System.out.println("TOKEN IS LOCKED? " + client.token.getStatus());
+
         }
+        while (client.getNext() != null && client.token.getStatus()) ;
+        if (DEBUG) {
+            System.out.println("TOKEN IS LOCKED? " + client.token.getStatus());
+        }
+        client.token.unlock();
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 

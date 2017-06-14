@@ -18,7 +18,7 @@ import java.net.URLDecoder;
 @Path("/games")
 public class GameServer {
     private static final String DEFAULT_ENCODING = "UTF-8";
-    protected GameManager gameManager = GameManager.getInstance();
+    private GameManager gameManager = GameManager.getInstance();
 
     @GET
     @Path("/all")
@@ -125,11 +125,11 @@ public class GameServer {
     private static String urlDecode(String gameName) {
         try {
             gameName = URLDecoder.decode(gameName, DEFAULT_ENCODING);
-        } catch (UnsupportedEncodingException e) {}
+        } catch (UnsupportedEncodingException ignored) {}
         return gameName;
     }
 
-    protected Response buildResponse(String message, Response.Status statusCode) {
+    private Response buildResponse(String message, Response.Status statusCode) {
         if (null != message)
             return Response.status(statusCode).entity(GsonService.getSimpleInstance().toJson(message)).build();
         return Response.status(statusCode).build();

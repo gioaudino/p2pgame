@@ -187,7 +187,7 @@ public class UserInteractionHandler {
                 case 'W':
                     try {
                         move = new Move(client.getPosition(), Direction.UP);
-                        client.setMove(move);
+                        waitAndFireMove(client, move);
                     } catch (IllegalMoveException e) {
                         System.err.println("Illegal move. You can't go UP from " + client.getPosition());
                     }
@@ -195,7 +195,7 @@ public class UserInteractionHandler {
                 case 'A':
                     try {
                         move = new Move(client.getPosition(), Direction.LEFT);
-                        client.setMove(move);
+                        waitAndFireMove(client, move);
                     } catch (IllegalMoveException e) {
                         System.err.println("Illegal move. You can't go LEFT from " + client.getPosition());
                     }
@@ -203,7 +203,7 @@ public class UserInteractionHandler {
                 case 'S':
                     try {
                         move = new Move(client.getPosition(), Direction.DOWN);
-                        client.setMove(move);
+                        waitAndFireMove(client, move);
                     } catch (IllegalMoveException e) {
                         System.err.println("Illegal move. You can't go DOWN from " + client.getPosition());
                     }
@@ -211,7 +211,7 @@ public class UserInteractionHandler {
                 case 'D':
                     try {
                         move = new Move(client.getPosition(), Direction.RIGHT);
-                        client.setMove(move);
+                        waitAndFireMove(client, move);
                     } catch (IllegalMoveException e) {
                         System.err.println("Illegal move. You can't go RIGHT from " + client.getPosition());
                     }
@@ -223,11 +223,19 @@ public class UserInteractionHandler {
                     printPlayingHeader(client);
                     break;
                 case 'Q':
+                    System.out.println("I WANNA GET FAR AWAY");
                     client.quitGame();
                     break;
             }
         }
 
+    }
+
+    private static void waitAndFireMove(ClientObject client, Move move) {
+//        while (client.getMove() != null)
+//            // EMPTY WHILE LOOP - WAITS FOR CURRENT MOVE TO BE PROCESSED
+//            System.out.print(".");
+        client.setMove(move);
     }
 
     public static void printPlayingHeader(ClientObject client) {

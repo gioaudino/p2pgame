@@ -92,7 +92,7 @@ public class LoggedGameServer extends GameServer {
         return response;
     }
 
-    protected void fireLogger(String methodName, Map<String, Object> request, Response response) {
+    private void fireLogger(String methodName, Map<String, Object> request, Response response) {
         new Thread(() -> MongoDBLogger.log(methodName, request, response)).start();
     }
 

@@ -11,42 +11,27 @@ import it.gioaudino.game.Service.P2PCommunicationService;
 public class MovePerformerRunnable implements Runnable {
 
     private ClientObject client;
+    private boolean stopped;
 
     public MovePerformerRunnable(ClientObject client) {
         this.client = client;
     }
 
+    public void stopMe() {
+        this.stopped = true;
+    }
+
     @Override
     public void run() {
-        synchronized (client.token) {
-            if (null != client.getNext()) {
-                try {
-                    client.token.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+        while (!stopped && client.getStatus() == ClientStatus.STATUS_PLAYING) {
+            if (null != client.getMove()) {
+                Move.perform(client);
             }
-            long last = System.currentTimeMillis() / 1000;
-            while (client.getStatus() == ClientStatus.STATUS_PLAYING) {
-                if (System.currentTimeMillis() / 1000 - last >= 5) {
-                    last = System.currentTimeMillis() / 1000;
-                    System.out.print("I'm still trying to perform moves! Next exists? ");
-                    System.out.println(client.getNext() != null);
-                }
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ignored) {
-                }
-                if (null != client.getMove()) {
-                    Move.perform(client);
-                }
+            synchronized (client.token) {
                 if (null != client.getNext()) {
-                    new Thread(() -> P2PCommunicationService.giveToken(client)).start();
-                    try {
-                        client.token.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    P2PCommunicationService.giveToken(client, false);
+                    client.token.lock();
                 }
             }
         }

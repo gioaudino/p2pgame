@@ -2,3 +2,5 @@
 SDPMMOG.iml
 web/
 out/
+*.log
+*/MANIFEST.MF

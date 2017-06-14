@@ -24,20 +24,22 @@ import java.util.List;
 public class ClientObject {
     private Peer user;
     private Game game;
-    private int score = 0;
+    private volatile int score = 0;
     private volatile Position position;
     private ServerSocket serverSocket;
     private volatile ClientStatus status = ClientStatus.STATUS_NEW;
     private volatile List<Socket> connections = new ArrayList<>();
     private volatile Socket next;
-    private Move move;
+    private volatile Move move;
+    private Bomb bomb;
+    private volatile SimpleQueue<Bomb> bombQueue = new SimpleQueue<>();
     private MovePerformerRunnable mover;
     private AccelerometerSimulator accelerometer;
-    private Buffer<Measurement> buffer;
+    private volatile Buffer<Measurement> buffer;
     private MeasurementAnalyser analyzer;
+    private ClientListener listener;
 
-    public final Object token = new Object();
-
+    public final Token token = new Token();
 
     public ClientObject() throws IOException {
         this.serverSocket = new ServerSocket(0);
@@ -47,7 +49,7 @@ public class ClientObject {
         return score;
     }
 
-    public void increaseScore(Peer dead) {
+    public synchronized void increaseScore(Peer dead) {
         this.score++;
         if (checkWonGame()) win();
         else {
@@ -115,9 +117,7 @@ public class ClientObject {
 
     public void clearNext() {
         this.next = null;
-        synchronized (this.token) {
-            this.token.notify();
-        }
+        token.unlock();
     }
 
     public Socket getNext() {
@@ -136,6 +136,15 @@ public class ClientObject {
         return connections;
     }
 
+    public ClientListener getListener() {
+        return listener;
+    }
+
+    public void setListener(ClientListener listener) {
+        this.listener = listener;
+    }
+
+
     public Peer buildPeer(String username) {
         this.user = new Peer(username, serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort());
         return this.user;
@@ -148,19 +157,23 @@ public class ClientObject {
         UserInteractionHandler.printPlayingHeader(this);
         this.mover = new MovePerformerRunnable(this);
         new Thread(this.mover).start();
-//        this.createAndStartAccelerometer();
+        startBombMaker();
     }
 
     public void prepareToJoinGame() {
         this.mover = new MovePerformerRunnable(this);
         P2PCommunicationService.generateConnections(this);
         this.setNext();
-        new Thread(this.mover).start();
-        P2PCommunicationService.newPlayer(this);
+        this.mover = new MovePerformerRunnable(this);
 
+        P2PCommunicationService.newPlayer(this);
+        this.token.lock();
         this.position = P2PCommunicationService.findPosition(this);
+
+        new Thread(this.mover).start();
+        System.out.println();
         UserInteractionHandler.printPlayingHeader(this);
-//        this.createAndStartAccelerometer();
+        startBombMaker();
 
     }
 
@@ -173,14 +186,19 @@ public class ClientObject {
     }
 
     public void quitGame() {
+        this.mover.stopMe();
         this.setStatus(ClientStatus.STATUS_DEAD);
-        if (exitFromGame()) return;
+        System.out.println("My status says I'm dead");
+        new Thread(this::exitFromGame).start();
+        System.out.println("Even the server knows I'm dead");
+        holdTokenAndQuit(null);
 
-        P2PCommunicationService.quitGame(this);
+//        P2PCommunicationService.quitGame(this);
         clearGameValues();
     }
 
     private boolean exitFromGame() {
+
         try {
             ClientRESTCommunicationService.quitGame(this);
         } catch (UnirestException | HTTPException e) {
@@ -193,8 +211,10 @@ public class ClientObject {
     }
 
     public void die(Peer killer) {
-        exitFromGame();
-        P2PCommunicationService.die(this, killer);
+        this.mover.stopMe();
+        new Thread(this::exitFromGame).start();
+        holdTokenAndQuit(killer);
+//        P2PCommunicationService.die(this, killer);
 
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
         System.out.println("\t\t\tYou just got killed by " + killer.getUsername());
@@ -203,6 +223,22 @@ public class ClientObject {
 
         clearGameValues();
     }
+
+    private void holdTokenAndQuit(Peer killer) {
+        if (connections.size() > 0) {
+            synchronized (token) {
+                if (!token.getStatus())
+                    this.token.lock();
+            }
+            if (null == killer)
+                P2PCommunicationService.quitGame(this);
+            else
+                P2PCommunicationService.die(this, killer);
+
+            P2PCommunicationService.giveToken(this, true);
+        }
+    }
+
 
     public void win() {
         exitFromGame();
@@ -226,6 +262,7 @@ public class ClientObject {
     }
 
     private void clearGameValues() {
+        System.out.println("\n\nCLEARING GAME VALUES\n\n");
         this.score = 0;
         for (Socket socket : connections) {
             try {
@@ -238,20 +275,28 @@ public class ClientObject {
         this.next = null;
         this.move = null;
         this.status = ClientStatus.STATUS_NOT_PLAYING;
-//        this.accelerometer.stopMeGently();
-//        this.analyzer.setKilled();
+        System.out.println("CLOSED LISTENING SOCKETS");
+        this.accelerometer.stopMeGently();
+        this.analyzer.setKilled();
+        this.bombQueue.clearQueue();
     }
 
-    void createAndStartAccelerometer() {
+    private void createAndStartAccelerometer() {
         this.buffer = new BufferedMeasurements<>();
         this.accelerometer = new AccelerometerSimulator("", this.buffer);
         new Thread(this.accelerometer).start();
     }
 
-    void createAndStartAnalyzer() {
+    private void createAndStartAnalyzer() {
         this.analyzer = new MeasurementAnalyser(this.buffer);
         new Thread(this.analyzer).start();
     }
+
+    private void startBombMaker() {
+        this.createAndStartAccelerometer();
+        this.createAndStartAnalyzer();
+    }
+
 
     public void removeConnection(Socket socket) {
         this.connections.remove(socket);

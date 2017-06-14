@@ -2,6 +2,7 @@ package it.gioaudino.game.Client;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
 import it.gioaudino.game.Exception.HTTPException;
+import it.gioaudino.game.Service.MessageHandler;
 
 import java.io.IOException;
 
@@ -15,11 +16,20 @@ public class Client {
         ClientObject client = new ClientObject();
 
         Thread menu = new Thread(new RunnableMenuHandler(client));
-        Thread listener = new Thread(new ClientListener(client));
+        client.setListener(new ClientListener(client));
+        new Thread(client.getListener()).start();
 
-        listener.start();
         menu.start();
-
+        if (MessageHandler.DEBUG) {
+            Thread.sleep(5000);
+            try {
+                if (client.getUser().getUsername().equals("morto")) {
+                    Thread.sleep(15000);
+                    client.quitGame();
+                }
+            } catch (NullPointerException e) {
+            }
+        }
         menu.join();
         System.exit(0);
 

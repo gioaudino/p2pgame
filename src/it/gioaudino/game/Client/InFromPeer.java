@@ -13,7 +13,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.SocketException;
 
 
 /**
@@ -26,6 +25,7 @@ public class InFromPeer implements Runnable {
     private Socket socket;
     private DataOutputStream out;
     private BufferedReader in;
+    private boolean stopMe = true;
 
     public InFromPeer(ClientObject client, Socket socket) throws CannotSetCommunicationPipeException {
         this.client = client;
@@ -38,17 +38,21 @@ public class InFromPeer implements Runnable {
         }
     }
 
+    public void stopMe() {
+        stopMe = false;
+    }
+
     @Override
     public void run() {
-        String input = null;
+        String input;
 
-        while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
+        while (stopMe && (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING)) {
             try {
                 input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
 
                 if (message.getType() != MessageType.TYPE_TOKEN)
-                    System.out.println("RECEIVED MESSAGE: " + message.getType());
+                    System.out.println("********* RECEIVED MESSAGE: " + message.getType());
                 Message response;
 
                 if (message.getType() != MessageType.TYPE_TOKEN && client.getStatus() == ClientStatus.STATUS_DEAD) {
@@ -58,10 +62,14 @@ public class InFromPeer implements Runnable {
                 } else {
                     response = MessageHandler.handleMessage(client, message);
                 }
+
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 out.writeBytes(serializedResponse + "\n");
-            } catch(IOException | NullPointerException ex){
-                System.out.println("Killing listening socket");
+//                System.out.println("RESPONSE: " + serializedResponse);
+            } catch (IOException | NullPointerException ex) {
+                System.out.println("\nKilling listening socket\n");
+                System.err.println(socket.getInetAddress().getCanonicalHostName() + ":" + socket.getPort() + " -- my port is " + socket.getLocalPort());
+                ex.printStackTrace();
                 return;
             } catch (JsonSyntaxException e) {
                 Message response = new Message();
@@ -71,16 +79,15 @@ public class InFromPeer implements Runnable {
                 try {
                     out.writeBytes(serializedResponse + "\n");
                 } catch (IOException e1) {
-                    System.err.println("INNER PROBLEM!!");
-                    e1.printStackTrace();
                     break;
                 }
                 try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
+                    Thread.sleep(30);
+                } catch (InterruptedException ignored) {
                 }
             }
+            System.out.println("IN STATUS: " + (stopMe && (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING)));
         }
+        System.out.println("\n\n\t\tKilled!");
     }
 }

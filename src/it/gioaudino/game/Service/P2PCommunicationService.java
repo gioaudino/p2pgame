@@ -48,7 +48,7 @@ public class P2PCommunicationService {
             message.setSender(client.getUser());
             message.setType(MessageType.TYPE_NEW);
 
-            fireToSocketsAndWait(client.getConnections(), message);
+            fireToSocketsAndWait(client.getConnections(), message, MAX_ATTEMPTS);
         }
     }
 
@@ -58,10 +58,11 @@ public class P2PCommunicationService {
         message.setSender(client.getUser());
         message.setType(MessageType.TYPE_MOVE);
         message.setPosition(client.getPosition());
-        fireToSocketsAndWait(sockets, message);
+        fireToSocketsAndWait(sockets, message, MAX_ATTEMPTS);
     }
 
     public static Position findPosition(ClientObject client) {
+        System.out.print(".");
         class AccessibleThread extends Thread {
             private MessageType responseType;
             private Socket socket;
@@ -75,7 +76,7 @@ public class P2PCommunicationService {
             @Override
             public void run() {
                 try {
-                    P2PCommunicationService.fireMessage(socket, message, true);
+                    P2PCommunicationService.fireMessage(socket, message, true, MAX_ATTEMPTS);
                 } catch (NegativeResponseException e) {
                     responseType = MessageType.TYPE_NACK;
                 }
@@ -105,45 +106,71 @@ public class P2PCommunicationService {
         return threads.size() > 0 ? findPosition(client) : position;
     }
 
-    public static void giveToken(ClientObject client) {
+    public static void giveToken(ClientObject client, boolean isLast) {
         Socket recipient = client.getNext();
         Message message = new Message();
         message.setSender(client.getUser());
         message.setType(MessageType.TYPE_TOKEN);
-//        System.out.println("+-+-+- SENDING TOKEN TO " + recipient.getInetAddress().getCanonicalHostName() + ":" +recipient.getPort() + " -+-+-+");
-        fireMessage(recipient, message, false);
+        String serializedMessage = GsonService.getSimpleInstance().toJson(message);
+        if (MessageHandler.DEBUG || isLast)
+            System.out.println("+-+-+- SENDING TOKEN TO " + recipient.getInetAddress().getCanonicalHostName() + ":" + recipient.getPort() + " -+-+-+ " + (System.currentTimeMillis()));
+        synchronized (client.getNext()) {
+            Message responseMsg = null;
+            do {
+
+                try {
+                    DataOutputStream out = new DataOutputStream(recipient.getOutputStream());
+                    BufferedReader in = new BufferedReader(new InputStreamReader(recipient.getInputStream()));
+                    out.writeBytes(serializedMessage + '\n');
+                    String response = in.readLine();
+                    if (MessageHandler.DEBUG || isLast)
+                        System.out.println("+-+-+- SENT! Response: " + response + " -+-+-+ " + (System.currentTimeMillis()));
+                    try {
+                        responseMsg = GsonService.getSimpleInstance().fromJson(response, Message.class);
+                    } catch (JsonSyntaxException ignored) {
+                        ignored.printStackTrace();
+                    }
+                } catch (IOException ignored) {
+                    ignored.printStackTrace();
+                }
+                if (responseMsg == null || responseMsg.getType() == MessageType.TYPE_ACK) System.out.println("GONNA GO");
+                else System.out.println("STAYING");
+            } while (responseMsg != null && responseMsg.getType() != MessageType.TYPE_ACK);
+        }
     }
 
     public static void quitGame(ClientObject client) {
+        System.out.println("CONNECTIONS: " + client.getConnections().size());
         if (client.getConnections().size() > 0) {
             Message message = new Message();
             message.setSender(client.getUser());
             message.setType(MessageType.TYPE_QUIT);
-            fireToSocketsAndWait(client.getConnections(), message);
+            fireToSocketsAndWait(client.getConnections(), message, 2 * MAX_ATTEMPTS);
         }
     }
 
     public static void die(ClientObject client, Peer killer) {
+        System.out.println("DIE DIE DIE");
         Message message = new Message();
         message.setSender(client.getUser());
         message.setType(MessageType.TYPE_DEAD);
         message.setKiller(killer);
-        fireToSocketsAndWait(client.getConnections(), message);
+        fireToSocketsAndWait(client.getConnections(), message, 2 * MAX_ATTEMPTS);
     }
 
-    public static void win(ClientObject client){
+    public static void win(ClientObject client) {
         if (client.getConnections().size() > 0) {
             Message message = new Message();
             message.setSender(client.getUser());
             message.setType(MessageType.TYPE_WIN);
-            fireToSocketsAndWait(client.getConnections(), message);
+            fireToSocketsAndWait(client.getConnections(), message, MAX_ATTEMPTS);
         }
     }
 
-    private static void fireToSocketsAndWait(Collection<Socket> sockets, Message message) {
+    private static void fireToSocketsAndWait(Collection<Socket> sockets, Message message, int attempts) {
         ArrayList<Thread> threads = new ArrayList<>();
         for (Socket socket : sockets) {
-            threads.add(new Thread(() -> P2PCommunicationService.fireMessage(socket, message, false)));
+            threads.add(new Thread(() -> P2PCommunicationService.fireMessage(socket, message, false, attempts)));
         }
         for (Thread thread : threads)
             thread.start();
@@ -154,12 +181,12 @@ public class P2PCommunicationService {
             }
     }
 
-    private static void fireMessage(Socket socket, Message message, boolean ackAndNo) throws NegativeResponseException {
+    private static void fireMessage(Socket socket, Message message, boolean ackAndNo, int attempts) throws NegativeResponseException {
         try {
-            if (!ackAndNo)
-                doFireAckMessage(socket, message, MAX_ATTEMPTS);
+            if (ackAndNo)
+                doFireAckNoMessage(socket, message, attempts);
             else
-                doFireAckNoMessage(socket, message, MAX_ATTEMPTS);
+                doFireAckMessage(socket, message, attempts);
         } catch (NotAcknowledgedException e) {
             System.err.println("Peer @ " + socket.getRemoteSocketAddress().toString() + " not reachable.");
         }
@@ -176,7 +203,7 @@ public class P2PCommunicationService {
         } catch (NotAcknowledgedException e) {
             if (attempts - 1 > 0) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(30);
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
@@ -203,32 +230,37 @@ public class P2PCommunicationService {
         } catch (NotAcknowledgedException e) {
             if (attempts - 1 > 0) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(30);
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 }
-                doFireAckNoMessage(socket, message, attempts - 1);}
-            else
+                doFireAckNoMessage(socket, message, attempts - 1);
+            } else
                 throw e;
         }
     }
 
-    private static synchronized Message sendMessageAndGetResponse(Socket socket, Message message) throws IOException {
-        if (message.getType() != MessageType.TYPE_TOKEN) System.out.println("SENDING MESSAGE " + message.getType());
-        String serializedMessage = GsonService.getSimpleInstance().toJson(message);
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out.writeBytes(serializedMessage + '\n');
-        String response = in.readLine();
-        try {
-            return GsonService.getSimpleInstance().fromJson(response, Message.class);
-        } catch (JsonSyntaxException e) {
-            System.err.println(response);
-            Message resp = new Message();
-            resp.setType(MessageType.TYPE_PROBLEM);
-            return resp;
+    private static Message sendMessageAndGetResponse(Socket socket, Message message) throws IOException {
+        synchronized (socket) {
+            if (message.getType() != MessageType.TYPE_TOKEN)
+                System.out.println("******* SENDING MESSAGE " + message.getType());
+            String serializedMessage = GsonService.getSimpleInstance().toJson(message);
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out.writeBytes(serializedMessage + '\n');
+            String response = in.readLine();
+            Message m;
+            try {
+                m = GsonService.getSimpleInstance().fromJson(response, Message.class);
+                if (message.getType() != MessageType.TYPE_TOKEN)
+                    System.out.println("RESPONSE: " + m.toString());
+            } catch (JsonSyntaxException e) {
+                System.err.println(response);
+                m = new Message();
+                m.setType(MessageType.TYPE_PROBLEM);
+            }
+            return m;
         }
-
     }
 
 
