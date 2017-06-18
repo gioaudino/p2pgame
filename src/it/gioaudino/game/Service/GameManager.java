@@ -9,10 +9,10 @@ import java.util.TreeMap;
  * Created by gioaudino on 10/05/17.
  */
 public class GameManager {
-    private static GameManager ourInstance = new GameManager();
+    private static GameManager instance = new GameManager();
 
     public static GameManager getInstance() {
-        return ourInstance;
+        return instance;
     }
 
     private Map<String, Game> games;

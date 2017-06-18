@@ -37,4 +37,30 @@ public class Bomb {
     public void setZone(PositionZone zone) {
         this.zone = zone;
     }
+
+    @Override
+    public String toString() {
+        return "Bomb{" +
+                "thrower=" + thrower.getUsername() +
+                ", zone=" + zone +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Bomb bomb = (Bomb) o;
+
+        return thrownTimestamp == bomb.thrownTimestamp && thrower.equals(bomb.thrower) && zone == bomb.zone;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = thrower.hashCode();
+        result = 31 * result + (int) (thrownTimestamp ^ (thrownTimestamp >>> 32));
+        result = 31 * result + zone.hashCode();
+        return result;
+    }
 }

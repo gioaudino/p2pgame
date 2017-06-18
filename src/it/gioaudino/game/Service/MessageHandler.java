@@ -1,7 +1,9 @@
 package it.gioaudino.game.Service;
 
+import it.gioaudino.game.Client.Client;
 import it.gioaudino.game.Client.ClientObject;
 import it.gioaudino.game.Entity.*;
+import it.gioaudino.game.Simulator.BombReceived;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -16,9 +18,9 @@ import java.util.NoSuchElementException;
  */
 public class MessageHandler {
 
-    public static final boolean DEBUG = false;
-
     public static Message handleMessage(ClientObject client, Message message) {
+        if (message.getType() != MessageType.TYPE_TOKEN)
+            System.out.println("******** RECEIVED MESSAGE " + message.getType());
         switch (message.getType()) {
             case TYPE_NEW:
                 return newPlayer(client, message);
@@ -28,6 +30,12 @@ public class MessageHandler {
                 return findPosition(client, message);
             case TYPE_QUIT:
                 return quit(client, message);
+            case TYPE_BOMB_THROWN:
+                return bombThrown(client, message);
+            case TYPE_BOMB_EXPLODED:
+                return bombExploded(client, message);
+            case TYPE_BOMB_DEAD:
+                return bombDead(client, message);
             case TYPE_DEAD:
                 return dead(client, message);
             case TYPE_WIN:
@@ -39,10 +47,18 @@ public class MessageHandler {
         }
     }
 
+    private static Message bombDead(ClientObject client, Message message) {
+        if (client.getUser().equals(message.getKiller())) {
+            client.increaseBombScore(message.getBomb(), message.getSender());
+        }
+        removeSocketAndSetNext(client, message);
+        return buildResponseMessage(client, MessageType.TYPE_ACK);
+    }
+
     private static Message move(ClientObject client, Message message) {
         if (client.getPosition().equals(message.getPosition())) {
             client.setStatus(ClientStatus.STATUS_DEAD);
-            new Thread(() -> client.die(message.getSender())).start();
+            new Thread(() -> client.die(message.getSender(), null)).start();
         }
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
@@ -60,7 +76,7 @@ public class MessageHandler {
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 
-    private static void removeSocketAndSetNext(ClientObject client, Message message) {
+    public static void removeSocketAndSetNext(ClientObject client, Message message) {
         MessageFormat format = new MessageFormat("Next: {0} -- Sender: {1} -- Connections.size(): {2}");
         System.out.println(format.format(new Object[]{client.getNext(), message.getSender(), client.getConnections().size()}));
 
@@ -137,21 +153,28 @@ public class MessageHandler {
     }
 
     private static Message token(ClientObject client, Message message) {
-        if (DEBUG) {
-            System.out.println("+-+-+- RECEIVED TOKEN FROM " + message.getSender() + " -+-+-+ " + (System.currentTimeMillis()));
-            System.out.println("TOKEN IS LOCKED? " + client.token.getStatus());
-
-        }
+        if (Client.DEBUG)
+            System.out.println("+-+-+- RECEIVED TOKEN FROM " + message.getSender().getFullAddress() + " -+-+-+ " + System.currentTimeMillis());
         while (client.getNext() != null && client.token.getStatus()) ;
-        if (DEBUG) {
-            System.out.println("TOKEN IS LOCKED? " + client.token.getStatus());
-        }
         client.token.unlock();
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 
     private static Message win(ClientObject client, Message message) {
         client.endGame(message.getSender());
+        return buildResponseMessage(client, MessageType.TYPE_ACK);
+    }
+
+    private static Message bombThrown(ClientObject client, Message message) {
+        System.out.println("•*•*•*• A bomb was thrown! •*•*•*•");
+        System.out.println(message.getSender().getUsername() + " has thrown a " + message.getBomb().getZone().toString().toLowerCase() + " bomb");
+        new Thread(new BombReceived(message.getBomb())).start();
+        return buildResponseMessage(client, MessageType.TYPE_ACK);
+    }
+
+    private static Message bombExploded(ClientObject client, Message message) {
+        System.out.println("RECEIVED EXPLOSION MESSAGE");
+        new Thread(() -> client.bombExploded(message.getBomb())).start();
         return buildResponseMessage(client, MessageType.TYPE_ACK);
     }
 

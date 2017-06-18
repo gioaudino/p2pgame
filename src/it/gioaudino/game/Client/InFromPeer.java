@@ -22,14 +22,11 @@ import java.net.Socket;
 public class InFromPeer implements Runnable {
 
     private ClientObject client;
-    private Socket socket;
     private DataOutputStream out;
     private BufferedReader in;
-    private boolean stopMe = true;
 
     public InFromPeer(ClientObject client, Socket socket) throws CannotSetCommunicationPipeException {
         this.client = client;
-        this.socket = socket;
         try {
             out = new DataOutputStream(socket.getOutputStream());
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -38,24 +35,20 @@ public class InFromPeer implements Runnable {
         }
     }
 
-    public void stopMe() {
-        stopMe = false;
-    }
-
     @Override
     public void run() {
         String input;
 
-        while (stopMe && (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING)) {
+        while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
+            System.err.println("STATUS IS " + client.getStatus());
             try {
                 input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
-
-                if (message.getType() != MessageType.TYPE_TOKEN)
-                    System.out.println("********* RECEIVED MESSAGE: " + message.getType());
                 Message response;
 
                 if (message.getType() != MessageType.TYPE_TOKEN && client.getStatus() == ClientStatus.STATUS_DEAD) {
+                    if (message.getType() == MessageType.TYPE_BOMB_DEAD || message.getType() == MessageType.TYPE_DEAD)
+                        MessageHandler.removeSocketAndSetNext(client, message);
                     response = new Message();
                     response.setSender(client.getUser());
                     response.setType(MessageType.TYPE_ACK);
@@ -65,11 +58,7 @@ public class InFromPeer implements Runnable {
 
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 out.writeBytes(serializedResponse + "\n");
-//                System.out.println("RESPONSE: " + serializedResponse);
             } catch (IOException | NullPointerException ex) {
-                System.out.println("\nKilling listening socket\n");
-                System.err.println(socket.getInetAddress().getCanonicalHostName() + ":" + socket.getPort() + " -- my port is " + socket.getLocalPort());
-                ex.printStackTrace();
                 return;
             } catch (JsonSyntaxException e) {
                 Message response = new Message();
@@ -86,8 +75,7 @@ public class InFromPeer implements Runnable {
                 } catch (InterruptedException ignored) {
                 }
             }
-            System.out.println("IN STATUS: " + (stopMe && (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING)));
+            System.err.println("STATUS IS " + client.getStatus());
         }
-        System.out.println("\n\n\t\tKilled!");
     }
 }

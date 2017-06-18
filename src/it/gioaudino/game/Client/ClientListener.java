@@ -24,14 +24,9 @@ public class ClientListener implements Runnable {
         this.established = new ArrayList<>();
     }
 
-    public void clearList(){
-        for(InFromPeer runnable: established)
-            runnable.stopMe();
-    }
-
     @Override
     public void run() {
-        while (true){
+        while (true) {
             try {
                 Socket connectionSocket = serverSocket.accept();
                 System.out.println("Received connection! -- " + connectionSocket.getRemoteSocketAddress());

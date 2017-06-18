@@ -1,11 +1,9 @@
 package it.gioaudino.game.Service;
 
 import com.google.gson.JsonSyntaxException;
+import it.gioaudino.game.Client.Client;
 import it.gioaudino.game.Client.ClientObject;
-import it.gioaudino.game.Entity.Message;
-import it.gioaudino.game.Entity.MessageType;
-import it.gioaudino.game.Entity.Peer;
-import it.gioaudino.game.Entity.Position;
+import it.gioaudino.game.Entity.*;
 import it.gioaudino.game.Exception.NegativeResponseException;
 import it.gioaudino.game.Exception.NotAcknowledgedException;
 
@@ -112,7 +110,7 @@ public class P2PCommunicationService {
         message.setSender(client.getUser());
         message.setType(MessageType.TYPE_TOKEN);
         String serializedMessage = GsonService.getSimpleInstance().toJson(message);
-        if (MessageHandler.DEBUG || isLast)
+        if (Client.DEBUG || isLast)
             System.out.println("+-+-+- SENDING TOKEN TO " + recipient.getInetAddress().getCanonicalHostName() + ":" + recipient.getPort() + " -+-+-+ " + (System.currentTimeMillis()));
         synchronized (client.getNext()) {
             Message responseMsg = null;
@@ -123,7 +121,7 @@ public class P2PCommunicationService {
                     BufferedReader in = new BufferedReader(new InputStreamReader(recipient.getInputStream()));
                     out.writeBytes(serializedMessage + '\n');
                     String response = in.readLine();
-                    if (MessageHandler.DEBUG || isLast)
+                    if (Client.DEBUG || isLast)
                         System.out.println("+-+-+- SENT! Response: " + response + " -+-+-+ " + (System.currentTimeMillis()));
                     try {
                         responseMsg = GsonService.getSimpleInstance().fromJson(response, Message.class);
@@ -133,14 +131,11 @@ public class P2PCommunicationService {
                 } catch (IOException ignored) {
                     ignored.printStackTrace();
                 }
-                if (responseMsg == null || responseMsg.getType() == MessageType.TYPE_ACK) System.out.println("GONNA GO");
-                else System.out.println("STAYING");
             } while (responseMsg != null && responseMsg.getType() != MessageType.TYPE_ACK);
         }
     }
 
     public static void quitGame(ClientObject client) {
-        System.out.println("CONNECTIONS: " + client.getConnections().size());
         if (client.getConnections().size() > 0) {
             Message message = new Message();
             message.setSender(client.getUser());
@@ -149,11 +144,15 @@ public class P2PCommunicationService {
         }
     }
 
-    public static void die(ClientObject client, Peer killer) {
-        System.out.println("DIE DIE DIE");
+    public static void die(ClientObject client, Peer killer, Bomb bomb) {
         Message message = new Message();
         message.setSender(client.getUser());
-        message.setType(MessageType.TYPE_DEAD);
+        if (null == bomb)
+            message.setType(MessageType.TYPE_DEAD);
+        else {
+            message.setType(MessageType.TYPE_BOMB_DEAD);
+            message.setBomb(bomb);
+        }
         message.setKiller(killer);
         fireToSocketsAndWait(client.getConnections(), message, 2 * MAX_ATTEMPTS);
     }
@@ -164,6 +163,28 @@ public class P2PCommunicationService {
             message.setSender(client.getUser());
             message.setType(MessageType.TYPE_WIN);
             fireToSocketsAndWait(client.getConnections(), message, MAX_ATTEMPTS);
+        }
+    }
+
+    public static void bombThrown(ClientObject client, Bomb bomb) {
+        bomb(client, bomb, MessageType.TYPE_BOMB_THROWN);
+    }
+
+    public static void bombExploded(ClientObject client, Bomb bomb) {
+        bomb(client, bomb, MessageType.TYPE_BOMB_EXPLODED);
+    }
+
+    private static void bomb(ClientObject client, Bomb bomb, MessageType messageType) {
+        if (Client.DEBUG)
+            System.out.println("SENDING BOMB MESSAGE: " + messageType);
+        if (client.getConnections().size() > 0) {
+            Message message = new Message();
+            message.setSender(client.getUser());
+            message.setBomb(bomb);
+            message.setType(messageType);
+            fireToSocketsAndWait(client.getConnections(), message, MAX_ATTEMPTS);
+            if (Client.DEBUG)
+                System.out.println("ACKS for " + message + " RECEIVED!");
         }
     }
 

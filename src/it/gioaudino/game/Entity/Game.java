@@ -28,7 +28,7 @@ public class Game {
         this.name = name;
         this.points = points;
         this.size = size;
-        this.peers = new HashMap<>();
+        this.peers = new LinkedHashMap<>();
     }
 
     public Game(String name, int size, int pointsToWin, Peer creator) {

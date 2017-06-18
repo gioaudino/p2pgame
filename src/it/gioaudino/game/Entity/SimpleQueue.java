@@ -22,6 +22,10 @@ public class SimpleQueue<T> {
         return queue.remove(0);
     }
 
+    public T peek() {
+        return queue.get(0);
+    }
+
     public int size() {
         return queue.size();
     }
@@ -32,5 +36,23 @@ public class SimpleQueue<T> {
 
     public void clearQueue() {
         queue = new ArrayList<>();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        String prefix = "";
+        for (T el : queue) {
+            if (el instanceof Bomb) {
+                sb.append(prefix);
+                prefix = ", ";
+                sb.append('(');
+                sb.append(((Bomb) el).getZone().toString().substring(0,1));
+                sb.append(')');
+            }
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }

@@ -217,13 +217,12 @@ public class UserInteractionHandler {
                     }
                     break;
                 case 'B':
-                    System.out.println("In a perfect world you would have just thrown a bomb");
+                    client.throwNext();
                     break;
                 case 'I':
                     printPlayingHeader(client);
                     break;
                 case 'Q':
-                    System.out.println("I WANNA GET FAR AWAY");
                     client.quitGame();
                     break;
             }
@@ -232,16 +231,14 @@ public class UserInteractionHandler {
     }
 
     private static void waitAndFireMove(ClientObject client, Move move) {
-//        while (client.getMove() != null)
-//            // EMPTY WHILE LOOP - WAITS FOR CURRENT MOVE TO BE PROCESSED
-//            System.out.print(".");
         client.setMove(move);
     }
 
     public static void printPlayingHeader(ClientObject client) {
         System.out.println("\n--------------------------------------------------------------------------");
-        MessageFormat format = new MessageFormat("User `{0}` in game `{1}`: {2}/{3} points - {4} bombs \u2014 Position: {5}\n");
-        Object[] args = {client.getUser().getUsername(), client.getGame().getName(), client.getScore(), client.getGame().getPoints(), "#", client.getPosition()};
+        MessageFormat format = new MessageFormat("Game `{1}` (grid size: {0}x{0}): {2}/{3} points - {4} \u2014 Position: {5}\n");
+        String bomb = client.getBombs().size() == 0 ? "no bombs available" : client.getBombs().peek().getZone() + " bomb available (" + client.getBombs().size() + ")";
+        Object[] args = {client.getGame().getSize(), client.getGame().getName(), client.getScore(), client.getGame().getPoints(), bomb, client.getPosition()};
         System.out.println(format.format(args));
     }
 

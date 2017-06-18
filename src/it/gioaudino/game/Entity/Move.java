@@ -4,6 +4,7 @@ import it.gioaudino.game.Client.ClientObject;
 import it.gioaudino.game.Client.UserInteractionHandler;
 import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.P2PCommunicationService;
+import it.gioaudino.game.Simulator.BombThrower;
 
 /**
  * Created by gioaudino on 01/06/17.
@@ -12,10 +13,15 @@ import it.gioaudino.game.Service.P2PCommunicationService;
 public class Move {
     private Position from;
     private Position to;
+    private Bomb bomb;
 
     public Move(Position from, Position to) {
         this.from = from;
         this.to = to;
+    }
+
+    public Move(Bomb bomb) {
+        this.bomb = bomb;
     }
 
     public Move(Position from, Direction direction) throws IllegalMoveException {
@@ -62,15 +68,28 @@ public class Move {
         this.to = to;
     }
 
+    public Bomb getBomb() {
+        return bomb;
+    }
+
+    public void setBomb(Bomb bomb) {
+        this.bomb = bomb;
+    }
+
     private boolean checkNewPosition(int x, int y, int gridSize) {
         return x >= 0 && x < gridSize && y >= 0 && y < gridSize;
     }
 
     private static void perform(ClientObject client, Move move) {
         if (client.getStatus() == ClientStatus.STATUS_PLAYING) {
-            client.setPosition(move.getTo());
-            UserInteractionHandler.printPlayingHeader(client);
-            P2PCommunicationService.move(client);
+            if (move.bomb != null) {
+                P2PCommunicationService.bombThrown(client, move.bomb);
+                new Thread(new BombThrower(client, move.bomb)).start();
+            } else {
+                client.setPosition(move.getTo());
+                UserInteractionHandler.printPlayingHeader(client);
+                P2PCommunicationService.move(client);
+            }
         }
         client.clearMove();
     }

@@ -6,6 +6,7 @@ import it.gioaudino.game.Exception.BadRequestException;
 import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
 import it.gioaudino.game.Service.P2PCommunicationService;
+import it.gioaudino.game.Simulator.BombThrower;
 import it.gioaudino.game.Simulator.BufferedMeasurements;
 import it.gioaudino.game.Simulator.MeasurementAnalyser;
 import it.unimi.Simulator.AccelerometerSimulator;
@@ -16,7 +17,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by gioaudino on 16/05/17.
@@ -24,20 +27,20 @@ import java.util.List;
 public class ClientObject {
     private Peer user;
     private Game game;
-    private volatile int score = 0;
+    private volatile Integer score = 0;
     private volatile Position position;
     private ServerSocket serverSocket;
     private volatile ClientStatus status = ClientStatus.STATUS_NEW;
     private volatile List<Socket> connections = new ArrayList<>();
     private volatile Socket next;
     private volatile Move move;
-    private Bomb bomb;
+    private Map<Bomb, Integer> bombScore = new HashMap<>();
     private volatile SimpleQueue<Bomb> bombQueue = new SimpleQueue<>();
     private MovePerformerRunnable mover;
-    private AccelerometerSimulator accelerometer;
+
     private volatile Buffer<Measurement> buffer;
+    private AccelerometerSimulator accelerometer;
     private MeasurementAnalyser analyzer;
-    private ClientListener listener;
 
     public final Token token = new Token();
 
@@ -49,8 +52,8 @@ public class ClientObject {
         return score;
     }
 
-    public synchronized void increaseScore(Peer dead) {
-        this.score++;
+    public void increaseScore(Peer dead) {
+        addToScore();
         if (checkWonGame()) win();
         else {
             System.out.println("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
@@ -58,6 +61,35 @@ public class ClientObject {
             System.out.println("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
         }
     }
+
+    private synchronized void addToScore() {
+        this.score++;
+    }
+
+    public void increaseBombScore(Bomb bomb, Peer dead) {
+        System.out.println("I killed someone with my bomb");
+        int currentBombScore = this.bombScore.getOrDefault(bomb, 0);
+        System.out.println("CURRENT BOMB SCORE IS " + currentBombScore + " -- Bomb was: " + bomb);
+        if (currentBombScore < 3) {
+            System.out.println(currentBombScore + " is < 3");
+            addToScore();
+            this.bombScore.put(bomb, currentBombScore + 1);
+            System.out.println("SAVED BOMBS:");
+            for(Map.Entry e: bombScore.entrySet())
+                System.out.println(e.getKey() + " ---> " + e.getValue());
+            if (checkWonGame()) win();
+            else {
+                System.out.println("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+                System.out.println("\t\tWell done! Your bomb killed " + dead.getUsername());
+                System.out.println("\n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+            }
+        } else {
+            System.out.println("\n====================================================================================\n");
+            System.out.println("\t\tYour bomb killed " + dead.getUsername() + " but this bomb gave you enough points");
+            System.out.println("\n====================================================================================\n");
+        }
+    }
+
 
     public ServerSocket getServerSocket() {
         return serverSocket;
@@ -136,14 +168,9 @@ public class ClientObject {
         return connections;
     }
 
-    public ClientListener getListener() {
-        return listener;
+    public SimpleQueue<Bomb> getBombs() {
+        return bombQueue;
     }
-
-    public void setListener(ClientListener listener) {
-        this.listener = listener;
-    }
-
 
     public Peer buildPeer(String username) {
         this.user = new Peer(username, serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort());
@@ -189,11 +216,10 @@ public class ClientObject {
         this.mover.stopMe();
         this.setStatus(ClientStatus.STATUS_DEAD);
         System.out.println("My status says I'm dead");
-        new Thread(this::exitFromGame).start();
+        exitFromGame();
         System.out.println("Even the server knows I'm dead");
-        holdTokenAndQuit(null);
+        holdTokenAndQuit(null, null);
 
-//        P2PCommunicationService.quitGame(this);
         clearGameValues();
     }
 
@@ -210,31 +236,32 @@ public class ClientObject {
         return false;
     }
 
-    public void die(Peer killer) {
+    public void die(Peer killer, Bomb bomb) {
+        this.status = ClientStatus.STATUS_DEAD;
+        System.out.println("DYING!");
         this.mover.stopMe();
-        new Thread(this::exitFromGame).start();
-        holdTokenAndQuit(killer);
-//        P2PCommunicationService.die(this, killer);
+        exitFromGame();
+        holdTokenAndQuit(killer, bomb);
 
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        System.out.println("\t\t\tYou just got killed by " + killer.getUsername());
+        System.out.println("\t\t\tYou just got killed by " + killer.getUsername() + (null == bomb ? "" : "'s bomb"));
         System.out.println("\t\t\tPress enter to continue");
         System.out.println("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 
         clearGameValues();
     }
 
-    private void holdTokenAndQuit(Peer killer) {
+    private void holdTokenAndQuit(Peer killer, Bomb bomb) {
         if (connections.size() > 0) {
             synchronized (token) {
                 if (!token.getStatus())
                     this.token.lock();
             }
+            System.out.println("Holding token!");
             if (null == killer)
                 P2PCommunicationService.quitGame(this);
             else
-                P2PCommunicationService.die(this, killer);
-
+                P2PCommunicationService.die(this, killer, bomb);
             P2PCommunicationService.giveToken(this, true);
         }
     }
@@ -262,7 +289,6 @@ public class ClientObject {
     }
 
     private void clearGameValues() {
-        System.out.println("\n\nCLEARING GAME VALUES\n\n");
         this.score = 0;
         for (Socket socket : connections) {
             try {
@@ -275,7 +301,6 @@ public class ClientObject {
         this.next = null;
         this.move = null;
         this.status = ClientStatus.STATUS_NOT_PLAYING;
-        System.out.println("CLOSED LISTENING SOCKETS");
         this.accelerometer.stopMeGently();
         this.analyzer.setKilled();
         this.bombQueue.clearQueue();
@@ -288,7 +313,7 @@ public class ClientObject {
     }
 
     private void createAndStartAnalyzer() {
-        this.analyzer = new MeasurementAnalyser(this.buffer);
+        this.analyzer = new MeasurementAnalyser(this, this.buffer);
         new Thread(this.analyzer).start();
     }
 
@@ -297,10 +322,57 @@ public class ClientObject {
         this.createAndStartAnalyzer();
     }
 
+    public void addBomb(Bomb bomb) {
+        this.bombQueue.push(bomb);
+        if (this.bombQueue.size() == 1) {
+            System.out.println("••••• You have a bomb now! It's a " + PositionZone.getZoneAsString(this.bombQueue.peek().getZone()).toLowerCase() + " bomb •••••");
+        }
+    }
+
+    public void addBomb(Double outlier) {
+        Bomb bomb = new Bomb(this.user, PositionZone.findZoneFromOutlier(outlier));
+        this.addBomb(bomb);
+    }
+
 
     public void removeConnection(Socket socket) {
         this.connections.remove(socket);
     }
 
 
+    public void bombExploded(Bomb bomb) {
+        System.out.println("BOMB EXPLODED! " + bomb);
+        if (bomb.getZone().equals(this.position.getZone())) {
+            System.out.println("I got killed!");
+            this.die(bomb.getThrower(), bomb);
+        } else {
+            System.out.println(bomb.getThrower().getUsername() + "'s bomb exploded! You made it, keep going!");
+        }
+    }
+
+    public void bombSuicide(Bomb bomb) {
+        this.mover.stopMe();
+        exitFromGame();
+        System.out.println("\n====================================================================================\n");
+        System.out.println("\t\t\tYou just committed suicide!");
+        System.out.println("\t\t\tPress enter to continue");
+        System.out.println("\n====================================================================================\n");
+
+        if (connections.size() > 0) {
+            synchronized (token) {
+                if (!token.getStatus())
+                    this.token.lock();
+            }
+            P2PCommunicationService.die(this, this.user, bomb);
+            P2PCommunicationService.bombExploded(this, bomb);
+            P2PCommunicationService.giveToken(this, true);
+        }
+        clearGameValues();
+    }
+
+    public void throwNext() {
+        Bomb bomb = this.bombQueue.pop();
+        Move move = new Move(bomb);
+        this.setMove(move);
+    }
 }
