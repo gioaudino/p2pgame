@@ -5,9 +5,9 @@ import com.google.gson.reflect.TypeToken;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import it.gioaudino.game.Client.ClientObject;
+import it.gioaudino.game.Client.Player;
 import it.gioaudino.game.Entity.Game;
-import it.gioaudino.game.Entity.Peer;
+import it.gioaudino.game.Entity.User;
 import it.gioaudino.game.Exception.BadRequestException;
 import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Exception.InternalServerErrorException;
@@ -62,21 +62,11 @@ public class ClientRESTCommunicationService {
 
     }
 
-    public static Game fetchGame(String gameName) throws UnirestException, HTTPException {
-        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_GET + urlEncode(gameName);
 
-        HttpResponse<String> jsonResponse = Unirest.get(url).asString();
-
-        throwExceptionIfNotOk(jsonResponse);
-
-        return GsonService.getSimpleInstance().fromJson(jsonResponse.getBody(), Game.class);
-
-    }
-
-    public static Game joinExistingGame(String gameName, Peer peer) throws UnirestException, HTTPException {
+    public static Game joinExistingGame(String gameName, User user) throws UnirestException, HTTPException {
         String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_PUT + urlEncode(gameName);
 
-        HttpResponse<String> jsonResponse = Unirest.put(url).body(GsonService.getSimpleInstance().toJson(peer)).asString();
+        HttpResponse<String> jsonResponse = Unirest.put(url).body(GsonService.getSimpleInstance().toJson(user)).asString();
 
         throwExceptionIfNotOk(jsonResponse);
 
@@ -91,8 +81,8 @@ public class ClientRESTCommunicationService {
         return Response.Status.OK.getStatusCode() == jsonResponse.getStatus();
     }
 
-    public static void quitGame(ClientObject client) throws UnirestException, HTTPException {
-        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_USER_DELETE + urlEncode(client.getGame().getName()) + "/" + urlEncode(client.getUser().getUsername());
+    public static void quitGame(Player player) throws UnirestException, HTTPException {
+        String url = INSTANCE_SERVER_ADDRESS + Routes.GAME_USER_DELETE + urlEncode(player.getGame().getName()) + "/" + urlEncode(player.getUser().getUsername());
         HttpResponse<String> jsonResponse = Unirest.delete(url).asString();
         throwExceptionIfNotOk(jsonResponse);
     }

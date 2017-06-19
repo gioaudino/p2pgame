@@ -1,7 +1,6 @@
 package it.gioaudino.game.Entity;
 
-import it.gioaudino.game.Client.ClientObject;
-import it.gioaudino.game.Client.UserInteractionHandler;
+import it.gioaudino.game.Client.Player;
 import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.P2PCommunicationService;
 import it.gioaudino.game.Simulator.BombThrower;
@@ -80,22 +79,22 @@ public class Move {
         return x >= 0 && x < gridSize && y >= 0 && y < gridSize;
     }
 
-    private static void perform(ClientObject client, Move move) {
-        if (client.getStatus() == ClientStatus.STATUS_PLAYING) {
+    private static void perform(Player player, Move move) {
+        if (player.getStatus() == ClientStatus.STATUS_PLAYING) {
             if (move.bomb != null) {
-                P2PCommunicationService.bombThrown(client, move.bomb);
-                new Thread(new BombThrower(client, move.bomb)).start();
+                P2PCommunicationService.bombThrown(player, move.bomb);
+                new Thread(new BombThrower(player, move.bomb)).start();
             } else {
-                client.setPosition(move.getTo());
-                UserInteractionHandler.printPlayingHeader(client);
-                P2PCommunicationService.move(client);
+                player.setPosition(move.getTo());
+                player.getOutputPrinter().printPlayingHeader(player);
+                P2PCommunicationService.move(player);
             }
         }
-        client.clearMove();
+        player.clearMove();
     }
 
-    public static void perform(ClientObject client) {
-        perform(client, client.getMove());
+    public static void perform(Player player) {
+        perform(player, player.getMove());
     }
 
     @Override

@@ -1,8 +1,8 @@
 package it.gioaudino.game.Service;
 
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.player.MongoCollection;
+import com.mongodb.player.MongoDatabase;
 import com.mongodb.util.JSON;
 import org.bson.Document;
 

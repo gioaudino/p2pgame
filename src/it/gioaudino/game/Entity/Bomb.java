@@ -5,20 +5,22 @@ package it.gioaudino.game.Entity;
  * Package it.gioaudino.game.Entity in game
  */
 public class Bomb {
-    private Peer thrower;
+    public static final int EXPLOSION_TIME = 5;
+    private User thrower;
     private long thrownTimestamp;
     private PositionZone zone;
 
-    public Bomb(Peer thrower, PositionZone zone) {
+    public Bomb(User thrower, PositionZone zone) {
         this.thrower = thrower;
         this.zone = zone;
+        this.thrownTimestamp = System.currentTimeMillis();
     }
 
-    public Peer getThrower() {
+    public User getThrower() {
         return thrower;
     }
 
-    public void setThrower(Peer thrower) {
+    public void setThrower(User thrower) {
         this.thrower = thrower;
     }
 
@@ -26,8 +28,8 @@ public class Bomb {
         return thrownTimestamp;
     }
 
-    public void setThrownTimestamp(long thrownTimestamp) {
-        this.thrownTimestamp = thrownTimestamp;
+    public void setThrownTimestamp() {
+        this.thrownTimestamp = System.currentTimeMillis();
     }
 
     public PositionZone getZone() {

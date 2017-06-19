@@ -1,7 +1,6 @@
 package it.gioaudino.game.Simulator;
 
-import it.gioaudino.game.Client.ClientObject;
-import it.gioaudino.game.Entity.PositionZone;
+import it.gioaudino.game.Client.Player;
 import it.unimi.Simulator.Buffer;
 import it.unimi.Simulator.Measurement;
 
@@ -15,16 +14,16 @@ public class MeasurementAnalyser implements Runnable {
 
     private static final int SLEEPING_TIME = 1000;
     private static final double ALPHA = 0.5;
-    private static final double THRESHOLD = 10;
+    private static final double THRESHOLD = 15;
 
 
-    private ClientObject client;
+    private Player player;
     private Buffer<Measurement> buffer;
     private boolean isKilled = false;
     private Double last = null;
 
-    public MeasurementAnalyser(ClientObject client, Buffer<Measurement> buffer) {
-        this.client = client;
+    public MeasurementAnalyser(Player player, Buffer<Measurement> buffer) {
+        this.player = player;
         this.buffer = buffer;
     }
 
@@ -61,7 +60,7 @@ public class MeasurementAnalyser implements Runnable {
             } else {
                 Double ema = last + ALPHA * (mean - last);
                 if (ema - last > THRESHOLD) {
-                    client.addBomb(ema);
+                    player.addBomb(ema);
                 }
                 last = ema;
             }

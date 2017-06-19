@@ -3,17 +3,15 @@ package it.gioaudino.game.Entity;
 import com.google.gson.annotations.Expose;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Created by gioaudino on 10/05/17.
  */
 public class Game {
     @Expose(serialize = false)
-    private Map<String, Peer> peers;
+    private Map<String, User> users;
     @Expose
     private final String name;
     @Expose
@@ -22,48 +20,44 @@ public class Game {
     private final int size;
     @Expose
     private Timestamp createdAt;
-    private Peer creator;
+    private User creator;
 
     public Game(String name, int points, int size) {
         this.name = name;
         this.points = points;
         this.size = size;
-        this.peers = new LinkedHashMap<>();
+        this.users = new LinkedHashMap<>();
     }
 
-    public Game(String name, int size, int pointsToWin, Peer creator) {
+    public Game(String name, int size, int pointsToWin, User creator) {
         if (size % 2 != 0) throw new IllegalArgumentException("Battlefield size has to be an even number");
         this.size = size;
         this.name = name;
         this.points = pointsToWin;
-        this.peers = new LinkedHashMap<>();
-        this.peers.put(creator.getUsername(), creator);
+        this.users = new LinkedHashMap<>();
+        this.users.put(creator.getUsername(), creator);
         this.creator = creator;
     }
 
-    public synchronized Game addPeer(Peer peer) {
-        if (this.peers.containsKey(peer.getUsername()))
-            throw new IllegalArgumentException("A player with name '" + peer.getUsername() + "' is already playing in the game '" + this.name + "'");
-        if (this.peers.size() >= this.size * this.size)
+    public synchronized Game addUser(User user) {
+        if (this.users.containsKey(user.getUsername()))
+            throw new IllegalArgumentException("A player with name '" + user.getUsername() + "' is already playing in the game '" + this.name + "'");
+        if (this.users.size() >= this.size * this.size)
             throw new IllegalArgumentException("There is no more room in the field. Try another match");
-        this.peers.put(peer.getUsername(), peer);
+        this.users.put(user.getUsername(), user);
         return this;
     }
 
-    public Peer removePeer(String name) {
-        return this.peers.remove(name);
+    public User removeUser(String name) {
+        return this.users.remove(name);
     }
 
-    public Map<String, Peer> getPeers() {
-        return peers;
+    public Map<String, User> getUsers() {
+        return users;
     }
 
-//    public Map<String, Peer> getPeers(String exclude) {
-//        return peers.entrySet().stream().filter(p -> !p.getKey().equals(exclude)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-//    }
-
-    public void setPeers(Map<String, Peer> peers) {
-        this.peers = peers;
+    public void setUsers(Map<String, User> users) {
+        this.users = users;
     }
 
     public String getName() {
@@ -86,7 +80,7 @@ public class Game {
         this.createdAt = new Timestamp(System.currentTimeMillis());
     }
 
-    public Peer getCreator() {
+    public User getCreator() {
         return creator;
     }
 }

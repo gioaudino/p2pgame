@@ -8,17 +8,17 @@ import it.gioaudino.game.Exception.ExitClientException;
  */
 public class RunnableMenuHandler implements Runnable {
 
-    ClientObject client;
+    Player player;
 
-    public RunnableMenuHandler(ClientObject client) {
-        this.client = client;
+    public RunnableMenuHandler(Player player) {
+        this.player = player;
     }
 
     @Override
     public void run() {
         try {
             while (true)
-                UserInteractionHandler.printMenu(client);
+                UserInteractionHandler.printMenu(player);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExitClientException ignored) {

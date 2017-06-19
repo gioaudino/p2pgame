@@ -7,7 +7,6 @@ import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
 
-import java.text.MessageFormat;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
@@ -23,20 +22,20 @@ public class UserInteractionHandler {
     private static final String[] playingChoices = {"\u00B7 Move with WASD", "\u00B7 Print info with I", "\u00B7 Throw bomb with B", "\u00B7 Quit with Q"};
     private static final Pattern inputPattern = Pattern.compile("[WASDIQB]", Pattern.CASE_INSENSITIVE);
 
-    public static void printMenu(ClientObject client) throws InterruptedException, ExitClientException {
-        if (client.checkWonGame())
-            client.win();
+    public static void printMenu(Player player) throws InterruptedException, ExitClientException {
+        if (player.checkWonGame())
+            player.win();
 
         try {
-            switch (client.getStatus()) {
+            switch (player.getStatus()) {
                 case STATUS_NEW:
-                    printNewMenu(client);
+                    printNewMenu(player);
                     break;
                 case STATUS_NOT_PLAYING:
-                    printNotPlayingMenu(client);
+                    printNotPlayingMenu(player);
                     break;
                 case STATUS_PLAYING:
-                    printPlaying(client);
+                    printPlaying(player);
                     break;
             }
         } catch (ExitClientException e) {
@@ -45,201 +44,196 @@ public class UserInteractionHandler {
         }
     }
 
-    private static void printNewMenu(ClientObject client) {
-        if (client.getUser() == null) {
-            System.out.print("Hi! Welcome to the game. Please tell me your username: ");
+    private static void printNewMenu(Player player) {
+        if (player.getUser() == null) {
+            player.getOutputPrinter().print("Hi! Welcome to the game. Please tell me your username: ");
             String username = in.nextLine();
             if (username.length() > 0) {
-                client.buildPeer(username);
-                client.setStatus(ClientStatus.STATUS_NOT_PLAYING);
+                player.buildPeer(username);
+                player.setStatus(ClientStatus.STATUS_NOT_PLAYING);
             }
         }
     }
 
-    private static void printNotPlayingMenu(ClientObject client) throws ExitClientException {
-        System.out.println("Hello " + client.getUser().getUsername() + ". Please state your intentions: ");
-        System.out.println();
-        for (String i : notPlayingChoices) System.out.println(i);
+    private static void printNotPlayingMenu(Player player) throws ExitClientException {
+        player.getOutputPrinter().println("Hello " + player.getUser().getUsername() + ". Please state your intentions: ");
+        player.getOutputPrinter().println();
+        for (String i : notPlayingChoices) player.getOutputPrinter().println(i);
         try {
             int choice = in.nextInt();
             in.nextLine();
 
             switch (choice) {
                 case 1: // change username
-                    changeUsername(client);
+                    changeUsername(player);
                     break;
                 case 2: // create new game
-                    createNewGame(client);
+                    createNewGame(player);
                     break;
                 case 3: // get list of games
-                    getGamesList();
+                    getGamesList(player);
                     break;
                 case 4: // join existing game
-                    joinExistingGame(client);
+                    joinExistingGame(player);
                     break;
                 case 5: // die
-                    System.out.println("Thanks for playing! Goodbye!");
+                    player.getOutputPrinter().println("Thanks for playing! Goodbye!");
                     throw new ExitClientException();
                 default:
-                    System.err.println("Sorry, I don't know that.");
+                    player.getOutputPrinter().println(System.err, "Sorry, I don't know that.");
             }
         } catch (InputMismatchException e) {
-            System.err.println("Sorry, I don't know that!");
+            player.getOutputPrinter().println(System.err, "Sorry, I don't know that!");
             in.nextLine();
         }
 
     }
 
-    private static void changeUsername(ClientObject client) {
-        System.out.print("Type your new username: ");
+    private static void changeUsername(Player player) {
+        player.getOutputPrinter().print("Type your new username: ");
         String username = in.nextLine();
-        Peer user = client.getUser();
+        User user = player.getUser();
         user.setUsername(username);
-        client.setUser(user);
+        player.setUser(user);
     }
 
-    private static void createNewGame(ClientObject client) {
-        System.out.print("Choose game name: ");
+    private static void createNewGame(Player player) {
+        player.getOutputPrinter().print("Choose game name: ");
         String gameName = in.nextLine();
         try {
             if (ClientRESTCommunicationService.tryGameName(gameName)) {
-                System.out.println("The game " + gameName + " exists already.");
+                player.getOutputPrinter().println("The game " + gameName + " exists already.");
             } else {
                 int side;
                 do {
-                    System.out.print("Choose field side -- should be a positive even number: ");
+                    player.getOutputPrinter().print("Choose field side -- should be a positive even number: ");
                     side = in.nextInt();
                     in.nextLine();
                 } while (side <= 0 || side % 2 != 0);
-                System.out.print("Choose score goal: ");
+                player.getOutputPrinter().print("Choose score goal: ");
                 int goal = in.nextInt();
                 in.nextLine();
-                Game newGame = new Game(gameName, side, goal, client.getUser());
+                Game newGame = new Game(gameName, side, goal, player.getUser());
                 Game gameResponse = ClientRESTCommunicationService.createNewGame(newGame);
                 if (null != gameResponse) {
-                    client.prepareForNewGame(gameResponse);
+                    player.prepareForNewGame(gameResponse);
                 }
             }
         } catch (UnirestException e) {
             e.printStackTrace();
         } catch (HTTPException e) {
-            System.out.println(e.getMessage());
+            player.getOutputPrinter().println(e.getMessage());
         }
     }
 
-    private static void getGamesList() {
+    private static void getGamesList(Player player) {
         List<Game> games = null;
         try {
             games = ClientRESTCommunicationService.getExistingGames();
         } catch (UnirestException e) {
             e.printStackTrace();
         } catch (HTTPException e) {
-            System.out.println(e.getMessage());
+            player.getOutputPrinter().println(e.getMessage());
         }
 
         if (null != games && games.size() > 0) {
-            System.out.println("Here are the games you can join:\n");
+            player.getOutputPrinter().println("Here are the games you can join:\n");
             for (Game g : games) {
-                System.out.println(g.getName());
-                System.out.println("\tGrid side length: " + g.getSize() + "\n\tPoints to win: " + g.getPoints() + "\n\tCreated at: " + g.getCreatedAt());
+                player.getOutputPrinter().println(g.getName());
+                player.getOutputPrinter().println(
+                        "\tGrid size: " + g.getSize() + "x" + g.getSize() +
+                        "\n\tPoints to win: " + g.getPoints() +
+                        "\n\tCreated at: " + g.getCreatedAt() + "\n");
             }
         } else {
-            System.out.println("There are no games you can join right now. Create one!");
+            player.getOutputPrinter().println("There are no games you can join right now. Create one!");
         }
     }
 
-    private static void joinExistingGame(ClientObject client) {
-        System.out.print("Which game would you like to join? ");
+    private static void joinExistingGame(Player player) {
+        player.getOutputPrinter().print("Which game would you like to join? ");
         String gameName = in.nextLine();
         try {
             if (!ClientRESTCommunicationService.tryGameName(gameName)) {
-                System.out.println("The game " + gameName + " does not exist.");
+                player.getOutputPrinter().println("The game " + gameName + " does not exist.");
             } else {
-                Game game = ClientRESTCommunicationService.joinExistingGame(gameName, client.getUser());
-                client.setGame(game);
-                client.setStatus(ClientStatus.STATUS_PLAYING);
-                client.prepareToJoinGame();
+                Game game = ClientRESTCommunicationService.joinExistingGame(gameName, player.getUser());
+                player.setGame(game);
+                player.setStatus(ClientStatus.STATUS_PLAYING);
+                player.prepareToJoinGame();
 
-                System.out.println("Welcome to " + game.getName() + ". There are " + (game.getPeers().size() - 1) + " other players");
+                player.getOutputPrinter().println("Welcome to " + game.getName() + ". There are " + (game.getUsers().size() - 1) + " other players");
             }
         } catch (UnirestException e) {
             e.printStackTrace();
         } catch (HTTPException e) {
-            System.out.println(e.getMessage());
+            player.getOutputPrinter().println(e.getMessage());
         }
     }
 
-    private static void printPlaying(ClientObject client) throws ExitClientException {
-        if (client.getStatus() != ClientStatus.STATUS_PLAYING) return;
+    private static void printPlaying(Player player) throws ExitClientException {
+        if (player.getStatus() != ClientStatus.STATUS_PLAYING) return;
         String input = null;
         do {
-            if (null != input && !inputPattern.matcher(input).matches() && client.getStatus() == ClientStatus.STATUS_PLAYING) {
-                System.err.println("Sorry, I don't know that");
+            if (null != input && !inputPattern.matcher(input).matches() && player.getStatus() == ClientStatus.STATUS_PLAYING) {
+                player.getOutputPrinter().println(System.err, "Sorry, I don't know that");
             }
-            for (String i : playingChoices) System.out.println(i);
+            for (String i : playingChoices) player.getOutputPrinter().println(i);
             input = in.nextLine();
-        } while (!inputPattern.matcher(input).matches() && client.getStatus() == ClientStatus.STATUS_PLAYING);
+        } while (!inputPattern.matcher(input).matches() && player.getStatus() == ClientStatus.STATUS_PLAYING);
 
-        if (client.getStatus() == ClientStatus.STATUS_PLAYING) {
+        if (player.getStatus() == ClientStatus.STATUS_PLAYING) {
             char choice = input.toUpperCase().charAt(0);
             Move move;
             switch (choice) {
                 case 'W':
                     try {
-                        move = new Move(client.getPosition(), Direction.UP);
-                        waitAndFireMove(client, move);
+                        move = new Move(player.getPosition(), Direction.UP);
+                        waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        System.err.println("Illegal move. You can't go UP from " + client.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
                     }
                     break;
                 case 'A':
                     try {
-                        move = new Move(client.getPosition(), Direction.LEFT);
-                        waitAndFireMove(client, move);
+                        move = new Move(player.getPosition(), Direction.LEFT);
+                        waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        System.err.println("Illegal move. You can't go LEFT from " + client.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
                     }
                     break;
                 case 'S':
                     try {
-                        move = new Move(client.getPosition(), Direction.DOWN);
-                        waitAndFireMove(client, move);
+                        move = new Move(player.getPosition(), Direction.DOWN);
+                        waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        System.err.println("Illegal move. You can't go DOWN from " + client.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
                     }
                     break;
                 case 'D':
                     try {
-                        move = new Move(client.getPosition(), Direction.RIGHT);
-                        waitAndFireMove(client, move);
+                        move = new Move(player.getPosition(), Direction.RIGHT);
+                        waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        System.err.println("Illegal move. You can't go RIGHT from " + client.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
                     }
                     break;
                 case 'B':
-                    client.throwNext();
+                    player.throwNext();
                     break;
                 case 'I':
-                    printPlayingHeader(client);
+                    player.getOutputPrinter().printPlayingHeader(player);
                     break;
                 case 'Q':
-                    client.quitGame();
+                    player.quitGame();
                     break;
             }
         }
 
     }
 
-    private static void waitAndFireMove(ClientObject client, Move move) {
-        client.setMove(move);
-    }
-
-    public static void printPlayingHeader(ClientObject client) {
-        System.out.println("\n--------------------------------------------------------------------------");
-        MessageFormat format = new MessageFormat("Game `{1}` (grid size: {0}x{0}): {2}/{3} points - {4} \u2014 Position: {5}\n");
-        String bomb = client.getBombs().size() == 0 ? "no bombs available" : client.getBombs().peek().getZone() + " bomb available (" + client.getBombs().size() + ")";
-        Object[] args = {client.getGame().getSize(), client.getGame().getName(), client.getScore(), client.getGame().getPoints(), bomb, client.getPosition()};
-        System.out.println(format.format(args));
+    private static void waitAndFireMove(Player player, Move move) {
+        player.setMove(move);
     }
 
 

@@ -15,12 +15,12 @@ import java.util.List;
 public class ClientListener implements Runnable {
 
     private ServerSocket serverSocket;
-    private ClientObject client;
+    private Player player;
     private List<InFromPeer> established;
 
-    public ClientListener(ClientObject client) {
-        this.serverSocket = client.getServerSocket();
-        this.client = client;
+    public ClientListener(Player player) {
+        this.serverSocket = player.getServerSocket();
+        this.player = player;
         this.established = new ArrayList<>();
     }
 
@@ -29,8 +29,7 @@ public class ClientListener implements Runnable {
         while (true) {
             try {
                 Socket connectionSocket = serverSocket.accept();
-                System.out.println("Received connection! -- " + connectionSocket.getRemoteSocketAddress());
-                InFromPeer p = new InFromPeer(client, connectionSocket);
+                InFromPeer p = new InFromPeer(player, connectionSocket);
                 new Thread(p).start();
                 established.add(p);
             } catch (IOException | CannotSetCommunicationPipeException e) {

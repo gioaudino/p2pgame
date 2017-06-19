@@ -1,5 +1,6 @@
 package it.gioaudino.game.Simulator;
 
+import it.gioaudino.game.Client.Player;
 import it.gioaudino.game.Entity.Bomb;
 
 /**
@@ -8,15 +9,17 @@ import it.gioaudino.game.Entity.Bomb;
  */
 public class BombReceived implements Runnable {
     private Bomb bomb;
+    private Player player;
 
-    public BombReceived(Bomb bomb) {
+    public BombReceived(Player player, Bomb bomb) {
+        this.player = player;
         this.bomb = bomb;
     }
 
     @Override
     public void run() {
-        for (int i = 0; i < 5; i++) {
-            System.out.println(bomb.getThrower().getUsername() + "'s " + bomb.getZone() + " bomb | " + (5 - i) + " seconds...");
+        for (int i = 0; i < Bomb.EXPLOSION_TIME; i++) {
+            player.getOutputPrinter().println(bomb.getThrower().getUsername() + "'s " + bomb.getZone() + " bomb | " + (5 - i) + " seconds...");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {

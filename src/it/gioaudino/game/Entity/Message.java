@@ -9,18 +9,19 @@ import it.gioaudino.game.Service.GsonService;
 
 public class Message {
 
-    private Peer sender;
+    private User sender;
     private MessageType type;
     private Position position;
-    private Peer killer;
+    private User killer;
     private Bomb bomb;
+    private long timestamp = System.currentTimeMillis();
 
-
-    public Peer getSender() {
+    
+    public User getSender() {
         return sender;
     }
 
-    public void setSender(Peer sender) {
+    public void setSender(User sender) {
         this.sender = sender;
     }
 
@@ -40,11 +41,11 @@ public class Message {
         this.position = position;
     }
 
-    public Peer getKiller() {
+    public User getKiller() {
         return killer;
     }
 
-    public void setKiller(Peer killer) {
+    public void setKiller(User killer) {
         this.killer = killer;
     }
 

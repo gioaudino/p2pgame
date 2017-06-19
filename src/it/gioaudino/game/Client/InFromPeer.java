@@ -21,12 +21,12 @@ import java.net.Socket;
  */
 public class InFromPeer implements Runnable {
 
-    private ClientObject client;
+    private Player player;
     private DataOutputStream out;
     private BufferedReader in;
 
-    public InFromPeer(ClientObject client, Socket socket) throws CannotSetCommunicationPipeException {
-        this.client = client;
+    public InFromPeer(Player player, Socket socket) throws CannotSetCommunicationPipeException {
+        this.player = player;
         try {
             out = new DataOutputStream(socket.getOutputStream());
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -39,21 +39,20 @@ public class InFromPeer implements Runnable {
     public void run() {
         String input;
 
-        while (client.getStatus() == ClientStatus.STATUS_DEAD || client.getStatus() == ClientStatus.STATUS_PLAYING) {
-            System.err.println("STATUS IS " + client.getStatus());
+        while (player.getStatus() == ClientStatus.STATUS_DEAD || player.getStatus() == ClientStatus.STATUS_PLAYING) {
             try {
                 input = in.readLine();
                 Message message = GsonService.getSimpleInstance().fromJson(input, Message.class);
                 Message response;
 
-                if (message.getType() != MessageType.TYPE_TOKEN && client.getStatus() == ClientStatus.STATUS_DEAD) {
+                if (message.getType() != MessageType.TYPE_TOKEN && player.getStatus() == ClientStatus.STATUS_DEAD) {
                     if (message.getType() == MessageType.TYPE_BOMB_DEAD || message.getType() == MessageType.TYPE_DEAD)
-                        MessageHandler.removeSocketAndSetNext(client, message);
+                        MessageHandler.removeSocketAndSetNext(player, message);
                     response = new Message();
-                    response.setSender(client.getUser());
+                    response.setSender(player.getUser());
                     response.setType(MessageType.TYPE_ACK);
                 } else {
-                    response = MessageHandler.handleMessage(client, message);
+                    response = MessageHandler.handleMessage(player, message);
                 }
 
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
@@ -62,7 +61,7 @@ public class InFromPeer implements Runnable {
                 return;
             } catch (JsonSyntaxException e) {
                 Message response = new Message();
-                response.setSender(client.getUser());
+                response.setSender(player.getUser());
                 response.setType(MessageType.TYPE_PROBLEM);
                 String serializedResponse = GsonService.getSimpleInstance().toJson(response);
                 try {
@@ -75,7 +74,6 @@ public class InFromPeer implements Runnable {
                 } catch (InterruptedException ignored) {
                 }
             }
-            System.err.println("STATUS IS " + client.getStatus());
         }
     }
 }

@@ -10,11 +10,11 @@ import it.gioaudino.game.Service.P2PCommunicationService;
  */
 public class MovePerformerRunnable implements Runnable {
 
-    private ClientObject client;
+    private Player player;
     private boolean stopped;
 
-    public MovePerformerRunnable(ClientObject client) {
-        this.client = client;
+    public MovePerformerRunnable(Player player) {
+        this.player = player;
     }
 
     public void stopMe() {
@@ -24,14 +24,14 @@ public class MovePerformerRunnable implements Runnable {
     @Override
     public void run() {
 
-        while (!stopped && client.getStatus() == ClientStatus.STATUS_PLAYING) {
-            if (null != client.getMove()) {
-                Move.perform(client);
+        while (!stopped && player.getStatus() == ClientStatus.STATUS_PLAYING) {
+            if (null != player.getMove()) {
+                Move.perform(player);
             }
-            synchronized (client.token) {
-                if (null != client.getNext()) {
-                    P2PCommunicationService.giveToken(client, false);
-                    client.token.lock();
+            synchronized (player.token) {
+                if (null != player.getNext()) {
+                    P2PCommunicationService.giveToken(player, false);
+                    player.token.lock();
                 }
             }
         }

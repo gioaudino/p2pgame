@@ -1,7 +1,7 @@
 package it.gioaudino.game.Server;
 
 import it.gioaudino.game.Entity.Game;
-import it.gioaudino.game.Entity.Peer;
+import it.gioaudino.game.Entity.User;
 import it.gioaudino.game.Service.GameManager;
 import it.gioaudino.game.Service.GsonService;
 
@@ -77,9 +77,9 @@ public class GameServer {
         if (null == game) {
             return buildResponse("Game " + gameName + " does not exist (anymore).", Response.Status.NOT_FOUND);
         }
-        Peer peer = GsonService.getSimpleInstance().fromJson(json, Peer.class);
+        User user = GsonService.getSimpleInstance().fromJson(json, User.class);
         try {
-            game.addPeer(peer);
+            game.addUser(user);
         } catch (IllegalArgumentException e) {
             return buildResponse(e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -95,12 +95,12 @@ public class GameServer {
         if (!gameManager.hasGame(gameName))
             return buildResponse("Game " + gameName + " does not exist (anymore?).", Response.Status.NOT_FOUND);
         Game game = gameManager.getGame(gameName);
-        if (!game.getPeers().containsKey(username))
+        if (!game.getUsers().containsKey(username))
             return buildResponse("Player " + username + " does not exist in game " + gameName, Response.Status.NOT_FOUND);
-        Peer peer = game.removePeer(username);
-        if (null == peer)
+        User user = game.removeUser(username);
+        if (null == user)
             return buildResponse("Something happened while deleting player", Response.Status.INTERNAL_SERVER_ERROR);
-        if(game.getPeers().size() == 0)
+        if(game.getUsers().size() == 0)
             gameManager.removeGame(game.getName());
         return Response.ok().build();
     }
