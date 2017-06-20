@@ -146,7 +146,7 @@ public class UserInteractionHandler {
                         "\n\tCreated at: " + g.getCreatedAt() + "\n");
             }
         } else {
-            player.getOutputPrinter().println("There are no games you can join right now. Create one!");
+            player.getOutputPrinter().println("There are no games to join right now. Why don't you create one?");
         }
     }
 
