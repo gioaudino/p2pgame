@@ -77,10 +77,4 @@ public class InFromPeer extends Thread{
             }
         }
     }
-    public void closeReader(){
-        try {
-            in.close();
-        } catch (IOException ignored) {
-        }
-    }
 }

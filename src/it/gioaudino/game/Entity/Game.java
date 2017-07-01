@@ -83,4 +83,14 @@ public class Game {
     public User getCreator() {
         return creator;
     }
+
+    @Override
+    public String toString() {
+        return "Game{" +
+                "users=" + users +
+                ",\n name='" + name + '\'' +
+                ",\n points=" + points +
+                ",\n size=" + size +
+                '}';
+    }
 }

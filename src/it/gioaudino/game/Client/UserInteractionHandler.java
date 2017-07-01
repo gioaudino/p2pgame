@@ -6,7 +6,6 @@ import it.gioaudino.game.Exception.ExitClientException;
 import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
-import it.gioaudino.game.Service.GameManager;
 
 import java.util.InputMismatchException;
 import java.util.List;
@@ -50,11 +49,8 @@ public class UserInteractionHandler {
             player.getOutputPrinter().print("Hi! Welcome to the game. Please tell me your username: ");
             String username = in.nextLine();
             if (username.length() > 0) {
-                if (username.equals("clear")) GameManager.getInstance().reset();
-                else {
-                    player.buildPeer(username);
-                    player.setStatus(ClientStatus.STATUS_NOT_PLAYING);
-                }
+                player.buildPeer(username);
+                player.setStatus(ClientStatus.STATUS_NOT_PLAYING);
             }
         }
     }

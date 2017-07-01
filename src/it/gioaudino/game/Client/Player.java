@@ -6,6 +6,7 @@ import it.gioaudino.game.Exception.BadRequestException;
 import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
 import it.gioaudino.game.Service.P2PCommunicationService;
+import it.gioaudino.game.Simulator.BombThrower;
 import it.gioaudino.game.Simulator.BufferedMeasurements;
 import it.gioaudino.game.Simulator.MeasurementAnalyser;
 import it.unimi.Simulator.AccelerometerSimulator;
@@ -35,6 +36,7 @@ public class Player {
     private volatile Move move;
     private Map<Bomb, Integer> bombScore = new HashMap<>();
     private volatile SimpleQueue<Bomb> bombQueue = new SimpleQueue<>();
+    private volatile SimpleQueue<BombThrower> bombThrown = new SimpleQueue<>();
     private MovePerformerRunnable mover;
     private OutputPrinter outputPrinter = new OutputPrinter(System.out);
 
@@ -44,6 +46,7 @@ public class Player {
     private ClientListener listener;
 
     public final Token token = new Token();
+    public final Object clearMonitor = new Object();
 
     public Player() throws IOException {
         this.serverSocket = new ServerSocket(0);
@@ -165,6 +168,10 @@ public class Player {
         return outputPrinter;
     }
 
+    public SimpleQueue<BombThrower> getBombThrown() {
+        return bombThrown;
+    }
+
     public User buildPeer(String username) {
         this.user = new User(username, serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort());
         return this.user;
@@ -269,12 +276,20 @@ public class Player {
         exitFromGame();
         outputPrinter.endGame(new Object[]{winner.getUsername()});
         synchronized (this.token) {
-            this.token.notifyAll();
+            this.token.unlock();
         }
         clearGameValues();
     }
 
     private void clearGameValues() {
+        synchronized (this.clearMonitor) {
+            if (this.bombThrown.size() > 0) {
+                try {
+                    this.clearMonitor.wait();
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
         this.score = 0;
         for (Socket socket : connections) {
             try {
@@ -282,21 +297,21 @@ public class Player {
             } catch (IOException ignored) {
             }
         }
-
         this.connections = new ArrayList<>();
         this.game = null;
         this.next = null;
         this.move = null;
-        this.status = ClientStatus.STATUS_NOT_PLAYING;
         this.accelerometer.stopMeGently();
         this.analyzer.setKilled();
         try {
             this.serverSocket = new ServerSocket(0);
             killAndStartNewListener();
         } catch (IOException ignored) {
-
         }
         this.bombQueue.clearQueue();
+        this.bombThrown.clearQueue();
+        this.startBombMaker();
+        this.status = ClientStatus.STATUS_NOT_PLAYING;
     }
 
     private void createAndStartAccelerometer() {
@@ -317,7 +332,7 @@ public class Player {
 
     private void addBomb(Bomb bomb) {
         this.bombQueue.push(bomb);
-        if (this.bombQueue.size() == 1) {
+        if (this.status == ClientStatus.STATUS_PLAYING && this.bombQueue.size() == 1) {
             outputPrinter.println("••••• You have a bomb now! It's a " + PositionZone.getZoneAsString(this.bombQueue.peek().getZone()).toLowerCase() + " bomb •••••");
         }
     }
@@ -352,7 +367,7 @@ public class Player {
         this.listener.start();
     }
 
-    private void killAndStartNewListener(){
+    private void killAndStartNewListener() {
         this.listener.killAllListeningThreads();
         this.startListener();
     }
@@ -361,22 +376,22 @@ public class Player {
     public String toString() {
         return "Player{" +
                 "user=" + user +
-                ", game=" + game +
-                ", score=" + score +
-                ", position=" + position +
-                ", serverSocket=" + serverSocket +
-                ", status=" + status +
-                ", connections=" + connections +
-                ", next=" + next +
-                ", move=" + move +
-                ", bombScore=" + bombScore +
-                ", bombQueue=" + bombQueue +
-                ", mover=" + mover +
-                ", buffer=" + buffer +
-                ", accelerometer=" + accelerometer +
-                ", analyzer=" + analyzer +
-                ", listener=" + listener +
-                ", token=" + token +
+                ",\n game=" + game +
+                ",\n score=" + score +
+                ",\n position=" + position +
+                ",\n serverSocket=" + serverSocket +
+                ",\n status=" + status +
+                ",\n connections=" + connections +
+                ",\n next=" + next +
+                ",\n move=" + move +
+                ",\n bombScore=" + bombScore +
+                ",\n bombQueue=" + bombQueue +
+                ",\n mover=" + mover +
+                ",\n buffer=" + buffer +
+                ",\n accelerometer=" + accelerometer +
+                ",\n analyzer=" + analyzer +
+                ",\n listener=" + listener +
+                ",\n token=" + token +
                 '}';
     }
 }

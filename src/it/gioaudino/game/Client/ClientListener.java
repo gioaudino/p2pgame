@@ -42,7 +42,6 @@ public class ClientListener extends Thread {
 
     public void killAllListeningThreads(){
         for(InFromPeer in: establishedThreads){
-            in.closeReader();
             in.interrupt();
         }
     }
