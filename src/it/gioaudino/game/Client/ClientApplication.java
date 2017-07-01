@@ -17,7 +17,7 @@ public class ClientApplication {
         Player player = new Player();
 
         Thread menu = new Thread(new RunnableMenuHandler(player));
-        new Thread(new ClientListener(player)).start();
+        player.startListener();
 
         menu.start();
         menu.join();

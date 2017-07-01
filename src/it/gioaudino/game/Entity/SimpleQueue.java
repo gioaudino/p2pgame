@@ -44,13 +44,11 @@ public class SimpleQueue<T> {
         sb.append('[');
         String prefix = "";
         for (T el : queue) {
-            if (el instanceof Bomb) {
-                sb.append(prefix);
-                prefix = ", ";
-                sb.append('(');
-                sb.append(((Bomb) el).getZone().toString().substring(0,1));
-                sb.append(')');
-            }
+            sb.append(prefix);
+            prefix = ", ";
+            sb.append('(');
+            sb.append(el);
+            sb.append(')');
         }
         sb.append(']');
         return sb.toString();

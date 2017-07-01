@@ -6,6 +6,7 @@ import it.gioaudino.game.Exception.ExitClientException;
 import it.gioaudino.game.Exception.HTTPException;
 import it.gioaudino.game.Exception.IllegalMoveException;
 import it.gioaudino.game.Service.ClientRESTCommunicationService;
+import it.gioaudino.game.Service.GameManager;
 
 import java.util.InputMismatchException;
 import java.util.List;
@@ -20,7 +21,7 @@ public class UserInteractionHandler {
     private static Scanner in = new Scanner(System.in);
     private static final String[] notPlayingChoices = {"1 \u2014 Change your username", "2 \u2014 Create new game", "3 \u2014 List existing games", "4 \u2014 Join existing game", "5 \u2014 Get out!"};
     private static final String[] playingChoices = {"\u00B7 Move with WASD", "\u00B7 Print info with I", "\u00B7 Throw bomb with B", "\u00B7 Quit with Q"};
-    private static final Pattern inputPattern = Pattern.compile("[WASDIQB]", Pattern.CASE_INSENSITIVE);
+    private static final Pattern inputPattern = Pattern.compile("[WASDIQBP]", Pattern.CASE_INSENSITIVE);
 
     public static void printMenu(Player player) throws InterruptedException, ExitClientException {
         if (player.checkWonGame())
@@ -49,8 +50,11 @@ public class UserInteractionHandler {
             player.getOutputPrinter().print("Hi! Welcome to the game. Please tell me your username: ");
             String username = in.nextLine();
             if (username.length() > 0) {
-                player.buildPeer(username);
-                player.setStatus(ClientStatus.STATUS_NOT_PLAYING);
+                if (username.equals("clear")) GameManager.getInstance().reset();
+                else {
+                    player.buildPeer(username);
+                    player.setStatus(ClientStatus.STATUS_NOT_PLAYING);
+                }
             }
         }
     }
@@ -79,6 +83,8 @@ public class UserInteractionHandler {
                 case 5: // die
                     player.getOutputPrinter().println("Thanks for playing! Goodbye!");
                     throw new ExitClientException();
+                case 0:
+                    player.getOutputPrinter().println(player.toString());
                 default:
                     player.getOutputPrinter().println(System.err, "Sorry, I don't know that.");
             }
@@ -142,8 +148,8 @@ public class UserInteractionHandler {
                 player.getOutputPrinter().println(g.getName());
                 player.getOutputPrinter().println(
                         "\tGrid size: " + g.getSize() + "x" + g.getSize() +
-                        "\n\tPoints to win: " + g.getPoints() +
-                        "\n\tCreated at: " + g.getCreatedAt() + "\n");
+                                "\n\tPoints to win: " + g.getPoints() +
+                                "\n\tCreated at: " + g.getCreatedAt() + "\n");
             }
         } else {
             player.getOutputPrinter().println("There are no games to join right now. Why don't you create one?");
@@ -199,7 +205,7 @@ public class UserInteractionHandler {
                         move = new Move(player.getPosition(), Direction.LEFT);
                         waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go LEFT from " + player.getPosition());
                     }
                     break;
                 case 'S':
@@ -207,7 +213,7 @@ public class UserInteractionHandler {
                         move = new Move(player.getPosition(), Direction.DOWN);
                         waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go DOWN from " + player.getPosition());
                     }
                     break;
                 case 'D':
@@ -215,7 +221,7 @@ public class UserInteractionHandler {
                         move = new Move(player.getPosition(), Direction.RIGHT);
                         waitAndFireMove(player, move);
                     } catch (IllegalMoveException e) {
-                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go UP from " + player.getPosition());
+                        player.getOutputPrinter().println(System.err, "Illegal move. You can't go RIGHT from " + player.getPosition());
                     }
                     break;
                 case 'B':
@@ -226,6 +232,9 @@ public class UserInteractionHandler {
                     break;
                 case 'Q':
                     player.quitGame();
+                    break;
+                case 'P':
+                    player.getOutputPrinter().println(player.toString());
                     break;
             }
         }

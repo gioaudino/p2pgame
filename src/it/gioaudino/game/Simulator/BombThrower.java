@@ -2,6 +2,7 @@ package it.gioaudino.game.Simulator;
 
 import it.gioaudino.game.Client.Player;
 import it.gioaudino.game.Entity.Bomb;
+import it.gioaudino.game.Entity.ClientStatus;
 import it.gioaudino.game.Service.P2PCommunicationService;
 
 /**
@@ -20,16 +21,18 @@ public class BombThrower implements Runnable {
     @Override
     public void run() {
         player.getOutputPrinter().println(this.bomb.getZone() + " bomb thrown!");
-        for (int i = 0; i < Bomb.EXPLOSION_TIME; i++) {
+        for (int i = 0; player.getStatus() == ClientStatus.STATUS_PLAYING && i < Bomb.EXPLOSION_TIME; i++) {
             player.getOutputPrinter().println(this.bomb.getZone() + " | " + (5 - i) + " seconds...");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
             }
         }
-        if (player.getPosition().getZone().equals(this.bomb.getZone()))
-            new Thread(() -> player.die(player.getUser(), this.bomb)).start();
+        if (player.getStatus() == ClientStatus.STATUS_PLAYING) {
+            if (player.getPosition().getZone().equals(this.bomb.getZone()))
+                new Thread(() -> player.die(player.getUser(), this.bomb)).start();
 
-        P2PCommunicationService.bombExploded(player, this.bomb);
+            P2PCommunicationService.bombExploded(player, this.bomb);
+        }
     }
 }

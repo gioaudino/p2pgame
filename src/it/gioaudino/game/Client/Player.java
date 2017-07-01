@@ -41,6 +41,7 @@ public class Player {
     private volatile Buffer<Measurement> buffer;
     private AccelerometerSimulator accelerometer;
     private MeasurementAnalyser analyzer;
+    private ClientListener listener;
 
     public final Token token = new Token();
 
@@ -66,7 +67,7 @@ public class Player {
 
     public void increaseBombScore(Bomb bomb, User dead) {
         int currentBombScore = this.bombScore.getOrDefault(bomb, 0);
-        if (currentBombScore < 3) {
+        if (currentBombScore < 3 && this.status == ClientStatus.STATUS_PLAYING) {
             addToScore();
             this.bombScore.put(bomb, currentBombScore + 1);
             if (checkWonGame()) win();
@@ -250,15 +251,15 @@ public class Player {
                 P2PCommunicationService.quitGame(this);
             else
                 P2PCommunicationService.die(this, killer, bomb);
-            P2PCommunicationService.giveToken(this, true);
+            P2PCommunicationService.giveToken(this);
         }
     }
 
 
     public void win() {
+        this.status = ClientStatus.STATUS_DEAD;
         exitFromGame();
         P2PCommunicationService.win(this);
-
         outputPrinter.win();
 
         clearGameValues();
@@ -267,6 +268,9 @@ public class Player {
     public void endGame(User winner) {
         exitFromGame();
         outputPrinter.endGame(new Object[]{winner.getUsername()});
+        synchronized (this.token) {
+            this.token.notifyAll();
+        }
         clearGameValues();
     }
 
@@ -278,6 +282,7 @@ public class Player {
             } catch (IOException ignored) {
             }
         }
+
         this.connections = new ArrayList<>();
         this.game = null;
         this.next = null;
@@ -287,7 +292,7 @@ public class Player {
         this.analyzer.setKilled();
         try {
             this.serverSocket = new ServerSocket(0);
-            new Thread(new ClientListener(this)).start();
+            killAndStartNewListener();
         } catch (IOException ignored) {
 
         }
@@ -310,7 +315,7 @@ public class Player {
         this.createAndStartAnalyzer();
     }
 
-    public void addBomb(Bomb bomb) {
+    private void addBomb(Bomb bomb) {
         this.bombQueue.push(bomb);
         if (this.bombQueue.size() == 1) {
             outputPrinter.println("••••• You have a bomb now! It's a " + PositionZone.getZoneAsString(this.bombQueue.peek().getZone()).toLowerCase() + " bomb •••••");
@@ -340,5 +345,38 @@ public class Player {
         Bomb bomb = this.bombQueue.pop();
         Move move = new Move(bomb);
         this.setMove(move);
+    }
+
+    public void startListener() {
+        this.listener = new ClientListener(this);
+        this.listener.start();
+    }
+
+    private void killAndStartNewListener(){
+        this.listener.killAllListeningThreads();
+        this.startListener();
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "user=" + user +
+                ", game=" + game +
+                ", score=" + score +
+                ", position=" + position +
+                ", serverSocket=" + serverSocket +
+                ", status=" + status +
+                ", connections=" + connections +
+                ", next=" + next +
+                ", move=" + move +
+                ", bombScore=" + bombScore +
+                ", bombQueue=" + bombQueue +
+                ", mover=" + mover +
+                ", buffer=" + buffer +
+                ", accelerometer=" + accelerometer +
+                ", analyzer=" + analyzer +
+                ", listener=" + listener +
+                ", token=" + token +
+                '}';
     }
 }

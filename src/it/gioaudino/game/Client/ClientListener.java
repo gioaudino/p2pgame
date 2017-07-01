@@ -12,16 +12,17 @@ import java.util.List;
  * Created by gioaudino on 20/05/17.
  * Package it.gioaudino.game.Client in game
  */
-public class ClientListener implements Runnable {
+public class ClientListener extends Thread {
 
     private ServerSocket serverSocket;
     private Player player;
-    private List<InFromPeer> established;
+    private List<InFromPeer> establishedThreads;
 
     public ClientListener(Player player) {
         this.serverSocket = player.getServerSocket();
         this.player = player;
-        this.established = new ArrayList<>();
+        this.establishedThreads = new ArrayList<>();
+
     }
 
     @Override
@@ -30,12 +31,19 @@ public class ClientListener implements Runnable {
             try {
                 Socket connectionSocket = serverSocket.accept();
                 InFromPeer p = new InFromPeer(player, connectionSocket);
-                new Thread(p).start();
-                established.add(p);
+                p.start();
+                establishedThreads.add(p);
             } catch (IOException | CannotSetCommunicationPipeException e) {
                 e.printStackTrace();
             }
 
+        }
+    }
+
+    public void killAllListeningThreads(){
+        for(InFromPeer in: establishedThreads){
+            in.closeReader();
+            in.interrupt();
         }
     }
 }

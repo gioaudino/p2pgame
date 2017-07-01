@@ -2,6 +2,7 @@ package it.gioaudino.game.Simulator;
 
 import it.gioaudino.game.Client.Player;
 import it.gioaudino.game.Entity.Bomb;
+import it.gioaudino.game.Entity.ClientStatus;
 
 /**
  * Created by gioaudino on 15/06/17.
@@ -18,7 +19,7 @@ public class BombReceived implements Runnable {
 
     @Override
     public void run() {
-        for (int i = 0; i < Bomb.EXPLOSION_TIME; i++) {
+        for (int i = 0; player.getStatus() == ClientStatus.STATUS_PLAYING && i < Bomb.EXPLOSION_TIME; i++) {
             player.getOutputPrinter().println(bomb.getThrower().getUsername() + "'s " + bomb.getZone() + " bomb | " + (5 - i) + " seconds...");
             try {
                 Thread.sleep(1000);

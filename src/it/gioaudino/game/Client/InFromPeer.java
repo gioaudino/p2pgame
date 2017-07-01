@@ -19,7 +19,7 @@ import java.net.Socket;
  * Created by gioaudino on 31/05/17.
  * Package it.gioaudino.game.Client in game
  */
-public class InFromPeer implements Runnable {
+public class InFromPeer extends Thread{
 
     private Player player;
     private DataOutputStream out;
@@ -29,7 +29,8 @@ public class InFromPeer implements Runnable {
         this.player = player;
         try {
             out = new DataOutputStream(socket.getOutputStream());
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            InputStreamReader isr = new InputStreamReader(socket.getInputStream());
+            in = new BufferedReader(isr);
         } catch (IOException e) {
             throw new CannotSetCommunicationPipeException();
         }
@@ -74,6 +75,12 @@ public class InFromPeer implements Runnable {
                 } catch (InterruptedException ignored) {
                 }
             }
+        }
+    }
+    public void closeReader(){
+        try {
+            in.close();
+        } catch (IOException ignored) {
         }
     }
 }

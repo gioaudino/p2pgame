@@ -100,7 +100,7 @@ public class P2PCommunicationService {
         return threads.size() > 0 ? findPosition(player) : position;
     }
 
-    public static void giveToken(Player player, boolean isLast) {
+    public static void giveToken(Player player) {
         Socket recipient = player.getNext();
         Message message = new Message();
         message.setSender(player.getUser());
@@ -121,7 +121,6 @@ public class P2PCommunicationService {
                         ignored.printStackTrace();
                     }
                 } catch (IOException ignored) {
-                    ignored.printStackTrace();
                 }
             } while (responseMsg != null && responseMsg.getType() != MessageType.TYPE_ACK);
         }
@@ -266,6 +265,4 @@ public class P2PCommunicationService {
         }
     }
 
-
 }
-

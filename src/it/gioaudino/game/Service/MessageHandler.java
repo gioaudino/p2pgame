@@ -17,6 +17,8 @@ import java.util.NoSuchElementException;
 public class MessageHandler {
 
     public static Message handleMessage(Player player, Message message) {
+        if (player.getStatus() == ClientStatus.STATUS_NOT_PLAYING)
+            return buildResponseMessage(player, MessageType.TYPE_ACK);
         switch (message.getType()) {
             case TYPE_NEW:
                 return newPlayer(player, message);
@@ -45,7 +47,7 @@ public class MessageHandler {
 
     private static Message bombDead(Player player, Message message) {
         if (player.getUser().equals(message.getKiller())) {
-            player.increaseBombScore(message.getBomb(), message.getSender());
+            new Thread(() -> player.increaseBombScore(message.getBomb(), message.getSender())).start();
         }
         removeSocketAndSetNext(player, message);
         return buildResponseMessage(player, MessageType.TYPE_ACK);
@@ -61,7 +63,7 @@ public class MessageHandler {
 
     private static Message dead(Player player, Message message) {
         if (player.getUser().equals(message.getKiller())) {
-            player.increaseScore(message.getSender());
+            new Thread(() -> player.increaseScore(message.getSender())).start();
         }
         removeSocketAndSetNext(player, message);
         return buildResponseMessage(player, MessageType.TYPE_ACK);
@@ -73,13 +75,11 @@ public class MessageHandler {
     }
 
     public static void removeSocketAndSetNext(Player player, Message message) {
-
         if (player.getConnections().size() == 1 && getCanonicalRemoteAddress(player.getConnections().get(0)).equals(message.getSender().toString())) {
             player.clearConnections();
             player.clearNext();
             return;
         }
-
         Socket newNext = null;
         Socket toBeRemoved = null;
         ListIterator<Socket> sockets = player.getConnections().listIterator();
@@ -93,7 +93,6 @@ public class MessageHandler {
                 break;
             }
         }
-
 
         player.removeConnection(toBeRemoved);
         try {
@@ -142,7 +141,7 @@ public class MessageHandler {
     }
 
     private static Message win(Player player, Message message) {
-        player.endGame(message.getSender());
+        new Thread(() -> player.endGame(message.getSender())).start();
         return buildResponseMessage(player, MessageType.TYPE_ACK);
     }
 

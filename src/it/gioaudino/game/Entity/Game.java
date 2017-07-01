@@ -41,7 +41,7 @@ public class Game {
 
     public synchronized Game addUser(User user) {
         if (this.users.containsKey(user.getUsername()))
-            throw new IllegalArgumentException("A player with name '" + user.getUsername() + "' is already playing in the game '" + this.name + "'");
+            throw new IllegalArgumentException("A player with name \'" + user.getUsername() + "\' is already playing in the game '" + this.name + "'");
         if (this.users.size() >= this.size * this.size)
             throw new IllegalArgumentException("There is no more room in the field. Try another match");
         this.users.put(user.getUsername(), user);

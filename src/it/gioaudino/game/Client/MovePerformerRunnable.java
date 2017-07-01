@@ -30,7 +30,7 @@ public class MovePerformerRunnable implements Runnable {
             }
             synchronized (player.token) {
                 if (null != player.getNext()) {
-                    P2PCommunicationService.giveToken(player, false);
+                    P2PCommunicationService.giveToken(player);
                     player.token.lock();
                 }
             }

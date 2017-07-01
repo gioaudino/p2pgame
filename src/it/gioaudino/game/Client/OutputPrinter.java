@@ -8,7 +8,7 @@ import java.text.MessageFormat;
  * Package it.gioaudino.game.Client in game
  */
 public class OutputPrinter {
-    private PrintStream out;
+    private final PrintStream out;
 
     public OutputPrinter(PrintStream out) {
         this.out = out;
@@ -86,8 +86,11 @@ public class OutputPrinter {
     }
 
     public void println(PrintStream stream, String s) {
-        stream.println(s);
+        synchronized (this.out) {
+            stream.println(s);
+        }
     }
+
     public void print(PrintStream stream, String s) {
         stream.print(s);
     }
