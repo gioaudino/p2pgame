@@ -1,4 +1,5 @@
-# Distributed and pervasive systems - MSc Computer Science - University of Milan
+# Distributed and pervasive systems
+# MSc Computer Science - University of Milan
 The application is a P2P distributed game, whose requirements are expressed below in the original Italian assignment. There's a RESTful server that handles the creation of the games and the players in each game. The game itself is completely handled by the peers using a token ring architecture.
 
 
