@@ -1,6 +1,7 @@
 # Distributed and pervasive systems
 # MSc Computer Science - University of Milan
 The application is a P2P distributed game, whose requirements are expressed below in the original Italian assignment. There's a RESTful server that handles the creation of the games and the players in each game. The game itself is completely handled by the peers using a token ring architecture.
+To play, after deploying and starting the glassfish webserver, run the jar file (`java -jar game.jar`) once for each player. The webserver address is hardcoded to `localhost` for the project's purpose, but it could be deployed anywhere.
 
 
 # Laboratorio di Sistemi Distribuiti e Pervasivi - Aprile 2017   
