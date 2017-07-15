@@ -11,8 +11,6 @@ import java.io.IOException;
  * Package gioaudino.game.Client in game
  */
 public class ClientApplication {
-    public static final boolean DEBUG = false;
-
     public static void main(String[] args) throws IOException, HTTPException, UnirestException, InterruptedException {
         Player player = new Player();
 
